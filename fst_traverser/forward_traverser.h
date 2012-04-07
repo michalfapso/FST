@@ -51,6 +51,9 @@ class ForwardTraverser {
 			mpPathPool(pPathPool),
 			mBackwardArcs(*pFst)
 		{ 
+			if (!FstProperties::IsTopologicallySorted(*mpFst)) {
+				THROW("ERROR: ForwardTraverser: Fst is not topologically sorted!");
+			}
 			Path<Arc>::SetSymbols(mpSyms);
 			//mBackwardArcs.Print(*mpSyms);
 		}
@@ -58,16 +61,6 @@ class ForwardTraverser {
 		void Traverse()
 		{
 			DBG("Traverse()");
-			if (!FstProperties::IsTopologicallySorted(*mpFst)) {
-				cerr << "Warning: FST is not topologically sorted! ...sorting...";
-				TopSort((MutableFst<Arc>*)mpFst);
-				cerr << "done" << endl;
-				//exit(1);
-			}
-
-			mNodes[0].mAlpha = Weight::One();
-			mNodes[0].mPathPosition = 0;
-			mNodes[0].mFwdPathsCount = 1;
 
 			// Loop through states
 			for (StateIterator<Fst<Arc>> siter(*mpFst); !siter.Done(); siter.Next())
@@ -78,7 +71,7 @@ class ForwardTraverser {
 //				DBG("state_id: "<<state_id);
 
 				DBG("");
-				DBG(fixed << setprecision(10) << "alpha "<<state_id<<" "<<n.mAlpha<<" "<<mpSyms->Find(n.mWordSymbol));
+				DBG(fixed << setprecision(10) << "alpha "<<state_id<<" "<<n.GetAlpha());
 
 				// Detections for the current state have to be filled in before traversing the arcs
 				//WordLinksToDetections(state_id);
@@ -96,8 +89,6 @@ class ForwardTraverser {
 					n_next.ComputeAlpha(n, arc);
 					n_next.SetStartTime(n, arc, olabel);
 
-					ForwardWord2DetectionMap(state_id, arc);
-
 					if (ilabel == "TERM_START") {
 						DBG("TERM_START");
 						DBG(n);
@@ -111,8 +102,8 @@ class ForwardTraverser {
 					} else if (ilabel == "TERM_END") {
 					}
 
-					n_next.mFwdPathsCount += n.mFwdPathsCount;
-					n_next.mFwdPhonemesCount += n.mFwdPhonemesCount + (IsPhoneme(olabel) ? n.mFwdPathsCount : 0);
+					n_next.AddFwdPathsCount(n.GetFwdPathsCount());
+					n_next.AddFwdPhonemesCount(n.GetFwdPhonemesCount() + (IsPhoneme(olabel) ? n.GetFwdPathsCount() : 0));
 				}
 			}
 		}
@@ -140,21 +131,6 @@ class ForwardTraverser {
 			}
 		}
 
-		void ProcessStartTimeArc(unsigned int stateId, const Arc& arc)
-		{
-			// For start time links, clear the weight of n_next and set it only by this timelink
-			// For end time links, do nothing - they are already processed from the previous word links
-			Node<Arc>& n_next = mNodes[arc.nextstate];
-			const string olabel = mpSyms->Find(arc.olabel);
-
-			n_next.mAlpha = Weight::Zero();
-			n_next.mAlpha = ComputeAlpha(stateId, arc);
-			n_next.mAlphaIsSetByTimelink = true;
-			DBG("  start time link alpha = "<<n_next.mAlpha);
-
-			n_next.SetStartTime(string2float(olabel.substr(2)));
-		}
-
 		void WordLinksToDetections(unsigned int stateId)
 		{
 			const Node<Arc>& n = mNodes[stateId];
@@ -168,7 +144,7 @@ class ForwardTraverser {
 				if (olabel.substr(0,2) == "W=") 
 				{
 					string word = olabel.substr(2);
-					//n_next.mAlpha = ComputeAlpha(stateId, arc);
+					//n_next.SetAlpha(ComputeAlpha(stateId, arc));
 					// Now all next outgoing links should be timelinks with label 't=...'
 					for (ArcIterator<Fst<Arc>> aiter_next(*mpFst, arc.nextstate); !aiter_next.Done(); aiter_next.Next())
 					{
@@ -180,24 +156,13 @@ class ForwardTraverser {
 						assert(IsFinalState(arc_next.nextstate));
 
 						float time = string2float(olabel_next.substr(2));
-						typename Arc::Weight weight = Times(Times(n.mAlpha, arc.weight), arc_next.weight);
-						DBG("Detection weight = alpha["<<stateId<<"] + l["<<stateId<<"->"<<arc.nextstate<<"] + l["<<arc.nextstate<<"->"<<arc_next.nextstate<<"] = "<<n.mAlpha<<" + "<<arc.weight<<" + "<<arc_next.weight);
+						typename Arc::Weight weight = Times(Times(n.GetAlpha(), arc.weight), arc_next.weight);
+						DBG("Detection weight = alpha["<<stateId<<"] + l["<<stateId<<"->"<<arc.nextstate<<"] + l["<<arc.nextstate<<"->"<<arc_next.nextstate<<"] = "<<n.GetAlpha()<<" + "<<arc.weight<<" + "<<arc_next.weight);
 
 						// For end time links, add the weight to the Word2DetectionMap
 						AddToWordDetectionsMap(word, stateId, DetectionEnd<Arc>(weight, time));
 					}
 				}
-			}
-		}
-
-		void ForwardWord2DetectionMap(unsigned int stateId, const Arc& arc)
-		{
-			Node<Arc>& n = mNodes[stateId];
-			for (typename Node<Arc>::Word2DetectionMap::iterator it = n.mWord2WeightMap.begin();
-				 it != n.mWord2WeightMap.end();
-				 it++)
-			{
-				AddToWordDetectionsMap(it->first, arc.nextstate, it->second);
 			}
 		}
 

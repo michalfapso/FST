@@ -5,6 +5,7 @@
 #include "parallel_arcs.h"
 #include "exception.h"
 #include "path.h"
+#include "fst_properties.h"
 
 template <class Arc>
 class PathGenerator
@@ -13,7 +14,7 @@ class PathGenerator
 		struct PathTerminator {
 			// return value: TRUE = terminate path, FALSE = continue
 			// includeArc: TRUE = include the given arc in the path
-			virtual bool operator()(const Arc& arc, bool* includeArc) const { 
+			virtual bool operator()(const Arc& arc, bool* includeArc) const {
 				includeArc = false;
 				return true; 
 			}
@@ -29,7 +30,11 @@ class PathGenerator
 			mNodes(nodes), 
 			mfPathTerminator(pathTerminator), 
 			mFinalNodePolicy(finalNodePolicy) 
-		{}
+		{
+			if (!FstProperties::IsTopologicallySorted(mFst)) {
+				THROW("ERROR: PathGenerator: Fst is not topologically sorted!");
+			}
+		}
 
 		void GeneratePaths(int startStateId, float startTime, OverlappingPathGroupList<Arc>* pPaths)
 		{
@@ -47,14 +52,6 @@ class PathGenerator
 			for (typename ParallelArcs<Arc>::const_iterator i = pa.begin(); i != pa.end(); i++) {
 				const Arc& arc = **i;
 				bool add_path_current_arc = mfPathTerminator(arc, pIncludeArc);
-				if (add_path_current_arc) {
-					DBG("add_path_current_arc");
-					exit(1);
-				}
-				if (arc.olabel == 100217) {
-					DBG("TERM_END found!");
-					exit(1);
-				}
 				if (add_path && !add_path_current_arc) {
 					THROW("ERROR: Among parallel arcs, some are path terminators, but others are not! ("<<stateId<<" -> "<<arc.nextstate<<")");
 				}
@@ -65,7 +62,7 @@ class PathGenerator
 
 		void GeneratePaths_recursive(typename Arc::StateId stateId, Path<Arc>& path, OverlappingPathGroupList<Arc> *pPaths)
 		{
-			DBG("GeneratePaths_recursive() path:"<<path);
+//			DBG("GeneratePaths_recursive() path:"<<path);
 			ArcIterator< Fst<Arc> > iarc(mFst, stateId);
 			// FINAL STATE REACHED
 			if (iarc.Done())
@@ -87,14 +84,10 @@ class PathGenerator
 				{
 					int nextstate = i->first;
 					const ParallelArcs<Arc>& pa = i->second;
-					DBG("pa: "<<pa);
+//					DBG("pa: "<<pa);
 					bool include_arc = false;
 					bool add_path = PathTerminatorForParallelArcs(stateId, pa, &include_arc);
 
-					if (add_path) {
-						DBG("ADD_PATH!!!");
-						exit(1);
-					}
 					if (add_path && !include_arc) { cout << "Adding path: " << path << endl; pPaths->Add(path); }
 					path.push_back(&pa);
 					if (add_path && include_arc) { cout << "Adding path: " << path << endl; pPaths->Add(path); }

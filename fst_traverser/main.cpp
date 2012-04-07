@@ -111,6 +111,12 @@ int main(int argc, char **argv)
 	if (fst->Start() < 0) {
 		cerr << "Warning: FST is empty!" << endl;
 	} else {
+		if (!FstProperties::IsTopologicallySorted(*fst)) {
+			cerr << "Warning: FST is not topologically sorted! ...sorting...";
+			TopSort((MutableFst<Arc>*)fst);
+			cerr << "done" << endl;
+		}
+
 		PathPool<Arc> pathpool(min_phonemes_count_threshold);
 
 		ForwardTraverser<Arc> trav(fst, syms, &pathpool);

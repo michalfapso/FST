@@ -18,6 +18,7 @@ class Nodes : public IndexedContainerInterface< std::vector< Node<Arc> > >
 			}
 			this->mContainer.resize(nstates);
 			InitializeParallelArcs(fst);
+			(*this)[0].InitStartNode();
 		}
 
 		void InitializeParallelArcs(const fst::Fst<Arc>& fst) 
