@@ -97,7 +97,6 @@ class Node {
 		int mPathPosition;
 		float mStartTime;
 		float mEndTime;
-		Word2DetectionMap mWord2WeightMap;
 		TimeContainer mStartTimes;
 		Nextnode2ParallelArcs mNextnode2ParallelArcs;
 };
