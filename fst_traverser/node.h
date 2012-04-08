@@ -8,60 +8,60 @@
 #include "string2float.h"
 
 template <class Arc>
-class Node {
+class Node_Base {
 	public:
-		typedef boost::unordered_map<int, ParallelArcs<Arc> > Nextnode2ParallelArcs;
-		typedef std::vector<float> TimeContainer;
+		typedef Arc ArcType;
 		typedef std::map<string, DetectionEnd<Arc> > Word2DetectionMap;
 
-		Node() :
+		Node_Base() :
 			mAlpha(Arc::Weight::Zero()),
 			mFwdPathsCount(0),
 			mFwdPhonemesCount(0),
-			mPathPosition(-1),
-			mStartTime(1000000000),
-			mEndTime(0)
+			mPathPosition(-1)
 		{}
 
-		void InitStartNode() {
+		virtual void InitStartNode() {
 			mAlpha = Arc::Weight::One();
 			mPathPosition = 0;
 			mFwdPathsCount = 1;
 		}
 
-		float GetStartTime() const {
-			float sum = 0;
-			for (TimeContainer::const_iterator i=mStartTimes.begin(); i!=mStartTimes.end(); i++) {
-				sum += *i;
-			}
-			return mStartTimes.empty() ? 0.0f : sum / mStartTimes.size();
-		}
-
-		void SetStartTime(const Node<Arc>& nFrom, const Arc& arc, const std::string& arcLabel)
-		{
-			if (arcLabel.substr(0,2) == "t=") {
-				mStartTimes.push_back(string2float(arcLabel.substr(2)));
-			} else {
-				for (TimeContainer::const_iterator i=nFrom.mStartTimes.begin(); i!=nFrom.mStartTimes.end(); i++) {
-					mStartTimes.push_back(*i);
-				}
-			}
-		}
-
-		void ComputeAlpha(const Node<Arc>& nFrom, const Arc& arc)
+		void ComputeAlpha(const Node_Base<Arc>& nFrom, const Arc& arc)
 		{
 			DBG(std::fixed << std::setprecision(10) << "  alpha["<<arc.nextstate<<"] = Plus(Times("<<nFrom.mAlpha<<", "<<arc.weight<<"), "<<mAlpha<<")  = Plus("<<Times(nFrom.mAlpha, arc.weight)<<", "<<mAlpha<<") = "<< Plus(Times(nFrom.mAlpha, arc.weight), mAlpha));
 			mAlpha = Plus(Times(nFrom.mAlpha, arc.weight), mAlpha);
 		}
 
-		friend std::ostream& operator<<(std::ostream& oss, const Node<Arc>& n) {
-			oss << "Start Times:";
-			for (TimeContainer::const_iterator i=n.mStartTimes.begin(); i!=n.mStartTimes.end(); i++) {
-				oss << " " << std::setprecision(2) << *i;
-			}
-			oss << " GetStartTime=" << std::setprecision(2) << n.GetStartTime() << endl;
+		friend std::ostream& operator<<(std::ostream& oss, const Node_Base<Arc>& n) {
+			oss << "alpha=" << n.mAlpha << " ";
 			return oss;
 		}
+
+		inline const typename Arc::Weight& GetAlpha() const {return mAlpha;}
+		inline void SetAlpha(const typename Arc::Weight& w) {mAlpha = w;}
+
+		inline unsigned int GetFwdPathsCount() const {return mFwdPathsCount;}
+		inline void AddFwdPathsCount(unsigned int i) {mFwdPathsCount += i;}
+
+		inline unsigned int GetFwdPhonemesCount() const {return mFwdPhonemesCount;}
+		inline void AddFwdPhonemesCount(unsigned int i) {mFwdPhonemesCount += i;}
+
+	protected:
+		typename Arc::Weight mAlpha;
+		unsigned int mFwdPathsCount;
+		unsigned int mFwdPhonemesCount;
+		int mPathPosition;
+};
+
+template <class NodeBase>
+class Node_ParallelArcs : public NodeBase {
+	public:
+		typedef typename NodeBase::ArcType Arc;
+		typedef Arc ArcType;
+	public:
+		typedef boost::unordered_map<int, ParallelArcs<Arc> > Nextnode2ParallelArcs;
+
+		Node_ParallelArcs() : NodeBase() {}
 
 		inline const Nextnode2ParallelArcs& GetParallelArcs() const { return mNextnode2ParallelArcs; }
 
@@ -81,24 +81,60 @@ class Node {
 			pa->Add(&arc);
 		}
 
-		inline const typename Arc::Weight& GetAlpha() const {return mAlpha;}
-		inline void SetAlpha(const typename Arc::Weight& w) {mAlpha = w;}
-
-		inline unsigned int GetFwdPathsCount() const {return mFwdPathsCount;}
-		inline void AddFwdPathsCount(unsigned int i) {mFwdPathsCount += i;}
-
-		inline unsigned int GetFwdPhonemesCount() const {return mFwdPhonemesCount;}
-		inline void AddFwdPhonemesCount(unsigned int i) {mFwdPhonemesCount += i;}
+		friend std::ostream& operator<<(std::ostream& oss, const Node_ParallelArcs<NodeBase>& n) {
+			oss << (NodeBase)n;
+			for (typename Nextnode2ParallelArcs::const_iterator i = n.GetParallelArcs().begin(); i != n.GetParallelArcs().end(); i++) {
+				oss << "(" << i->second << " -> " << i->first << ") ";
+			}
+			return oss;
+		}
 
 	protected:
-		typename Arc::Weight mAlpha;
-		unsigned int mFwdPathsCount;
-		unsigned int mFwdPhonemesCount;
-		int mPathPosition;
-		float mStartTime;
-		float mEndTime;
-		TimeContainer mStartTimes;
 		Nextnode2ParallelArcs mNextnode2ParallelArcs;
+};
+
+template <class NodeBase>
+class Node_StartTime : public NodeBase {
+	protected:
+		typedef typename NodeBase::ArcType Arc;
+		typedef Arc ArcType;
+	public:
+		typedef std::vector<float> TimeContainer;
+
+		Node_StartTime() : NodeBase() {}
+
+		float GetStartTime() const {
+			float sum = 0;
+			for (TimeContainer::const_iterator i=mStartTimes.begin(); i!=mStartTimes.end(); i++) {
+				sum += *i;
+			}
+			return mStartTimes.empty() ? 0.0f : sum / mStartTimes.size();
+		}
+
+		void SetStartTime(const Node_StartTime<NodeBase>& nFrom, const Arc& arc, const std::string& arcLabel)
+		{
+			if (arcLabel.substr(0,2) == "t=") {
+				mStartTimes.push_back(string2float(arcLabel.substr(2)));
+			} else {
+				mStartTimes.push_back(nFrom.GetStartTime());
+//				for (TimeContainer::const_iterator i=nFrom.mStartTimes.begin(); i!=nFrom.mStartTimes.end(); i++) {
+//					mStartTimes.push_back(*i);
+//				}
+			}
+		}
+
+		friend std::ostream& operator<<(std::ostream& oss, const Node_StartTime<NodeBase>& n) {
+			oss << (NodeBase)n;
+			oss << "Start Times:";
+			for (TimeContainer::const_iterator i=n.mStartTimes.begin(); i!=n.mStartTimes.end(); i++) {
+				oss << " " << std::setprecision(2) << *i;
+			}
+			oss << " GetStartTime=" << std::setprecision(2) << n.GetStartTime();
+			return oss;
+		}
+
+	protected:
+		TimeContainer mStartTimes;
 };
 
 #endif

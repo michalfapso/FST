@@ -11,7 +11,7 @@ class PathGeneratorRecursive : PathGenerator<Arc>
 				const Fst<Arc>& fst, 
 				const Nodes<Arc>& nodes, 
 				const PathTerminator<Arc>& pathTerminator, 
-				FinalNodePolicy finalNodePolicy) : 
+				PathGenerator::FinalNodePolicy finalNodePolicy) : 
 			PathGenerator(fst, nodes, pathTerminator, finalNodePolicy)
 		{
 		}

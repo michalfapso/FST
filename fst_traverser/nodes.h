@@ -7,9 +7,20 @@
 #include "node.h"
 
 template <class Arc>
-class Nodes : public IndexedContainerInterface< std::vector< Node<Arc> > >
+struct NodesElementType {
+	typedef 
+		Node_ParallelArcs < 
+		Node_StartTime < 
+		Node_Base <Arc> 
+		> > type;
+};
+
+template <class Arc>
+class Nodes : public IndexedContainerInterface< std::vector< typename NodesElementType<Arc>::type > >
 {
 	public:
+		typedef typename NodesElementType<Arc>::type Node;
+
 		Nodes(const fst::Fst<Arc>& fst) {
 			using namespace fst;
 			size_t nstates = 0;
@@ -27,7 +38,7 @@ class Nodes : public IndexedContainerInterface< std::vector< Node<Arc> > >
 			for (StateIterator<Fst<Arc>> siter(fst); !siter.Done(); siter.Next())
 			{
 				unsigned int state_id = siter.Value();
-				Node<Arc>& n = (*this)[state_id];
+				Node& n = (*this)[state_id];
 				for (ArcIterator<Fst<Arc>> aiter(fst, state_id); !aiter.Done(); aiter.Next())
 				{
 					const Arc &arc = aiter.Value();

@@ -1,6 +1,8 @@
 #ifndef _PATH_TERMINATOR_H_
 #define _PATH_TERMINATOR_H_
 
+#include "exception.h"
+
 template<class Arc>
 class PathTerminator {
 	public:

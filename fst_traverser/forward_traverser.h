@@ -26,7 +26,8 @@ class ForwardTraverser {
 		class PathTerminatorTermEnd : public PathTerminator<Arc>
 		{
 			public:
-				PathTerminatorTermEnd(const SymbolTable& syms) : PathTerminator() {
+				PathTerminatorTermEnd(const SymbolTable& syms) : PathTerminator<Arc>() 
+				{
 					std::string term_end_str = "TERM_END";
 					SYMBOL_TERM_END = syms.Find(term_end_str);
 					if (SYMBOL_TERM_END == SymbolTable::kNoSymbol) {
@@ -44,6 +45,7 @@ class ForwardTraverser {
 		//--------------------------------------------------
 	public:
 		typedef typename Arc::Weight Weight;
+		typedef typename Nodes<Arc>::Node Node;
 
 		ForwardTraverser(const Fst<Arc>* pFst, const SymbolTable* pSyms, PathPool<Arc>* pPathPool) :  
 			mpFst(pFst),
@@ -68,7 +70,7 @@ class ForwardTraverser {
 			{
 				// Loop through output arcs
 				unsigned int state_id = siter.Value();
-				Node<Arc>& n = mNodes[state_id];
+				Node& n = mNodes[state_id];
 //				DBG("state_id: "<<state_id);
 
 				DBG("");
@@ -82,7 +84,7 @@ class ForwardTraverser {
 					const Arc &arc = aiter.Value();
 					const string olabel = mpSyms->Find(arc.olabel);
 					const string ilabel = mpSyms->Find(arc.ilabel);
-					Node<Arc>& n_next = mNodes[arc.nextstate];
+					Node& n_next = mNodes[arc.nextstate];
 
 					DBG("");
 					DBG(state_id<<" -> "<<arc.nextstate<<" ("<<ilabel<<":"<<olabel<<")");
