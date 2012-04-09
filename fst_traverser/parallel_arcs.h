@@ -68,7 +68,7 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			}
 		}
 
-		std::ostream& PrintInputSymbolsOnly(std::ostream& oss) const {
+		std::ostream& PrintPhonemesOnly(std::ostream& oss) const {
 			if (this->empty()) {
 				return oss << "[EMPTY]";
 			} else {
@@ -89,7 +89,7 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			switch (msPrintType) {
 				case PRINT_ALL: return pa.PrintAllInfo(oss);
 				case PRINT_NODES_ONLY: return pa.PrintNodesOnly(oss);
-				case PRINT_INPUT_SYMBOLS_ONLY: return pa.PrintInputSymbolsOnly(oss);
+				case PRINT_PHONEMES_ONLY: return pa.PrintPhonemesOnly(oss);
 				default: throw std::runtime_error("ERROR: Unknown print type of Path!");
 			}
 		}

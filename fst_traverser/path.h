@@ -121,7 +121,14 @@ class Path : public Path_Base<Arc>::type
 			oss << endl;
 
 			PrintType pt = ParallelArcs<Arc>::GetPrintType();
-			ParallelArcs<Arc>::SetPrintType(PRINT_INPUT_SYMBOLS_ONLY);
+			ParallelArcs<Arc>::SetPrintType(PRINT_PHONEMES_ONLY);
+			oss << "phonemes: ";
+			PrintPhonemesOnly(oss);
+			ParallelArcs<Arc>::SetPrintType(pt);
+			return oss;
+		}
+
+		std::ostream& PrintPhonemesOnly(std::ostream& oss) const {
 			oss << "phonemes: ";
 			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
 				const ParallelArcs<Arc>& pa = **i;
@@ -129,17 +136,15 @@ class Path : public Path_Base<Arc>::type
 					oss << pa << " ";
 				}
 			}
-			ParallelArcs<Arc>::SetPrintType(pt);
 			return oss;
 		}
 
 		friend std::ostream& operator<<(std::ostream& oss, const Path<Arc>& p) {
-			if (msPrintType == PRINT_ALL) {
-				return p.PrintAllInfo(oss);
-			} else if (msPrintType == PRINT_NODES_ONLY) {
-				return p.PrintNodesOnly(oss);
-			} else {
-				throw std::runtime_error("ERROR: Unknown print type of Path!");
+			switch (msPrintType) {
+				case PRINT_ALL: return p.PrintAllInfo(oss);
+				case PRINT_NODES_ONLY: return p.PrintNodesOnly(oss);
+				case PRINT_PHONEMES_ONLY: return p.PrintPhonemesOnly(oss);
+				default: throw std::runtime_error("ERROR: Unknown print type of Path!");
 			}
 		}
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

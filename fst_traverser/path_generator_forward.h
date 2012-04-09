@@ -28,9 +28,6 @@ class PathGeneratorForward : public PathGenerator<Arc>
 
 			DBG("PathGeneratorForward::GeneratePaths()");
 
-			Path<Arc>::SetPrintType(PRINT_ALL);
-			//Path<Arc>::SetPrintType(PRINT_NODES_ONLY);
-
 			vnbp[startStateId].SetBestPathStartStateId(startStateId);
 			vnbp[startStateId].SetBestPathStartTime(this->mNodes[startStateId].GetStartTime());
 //			vnbp[startStateId].SetBestPathWeight();

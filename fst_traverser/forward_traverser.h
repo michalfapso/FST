@@ -59,6 +59,10 @@ class ForwardTraverser {
 			}
 			Path<Arc>::SetSymbols(mpSyms);
 			//mBackwardArcs.Print(*mpSyms);
+
+			//Path<Arc>::SetPrintType(PRINT_ALL);
+			//Path<Arc>::SetPrintType(PRINT_NODES_ONLY);
+			Path<Arc>::SetPrintType(PRINT_PHONEMES_ONLY);
 		}
 	
 		void Traverse()
@@ -71,10 +75,10 @@ class ForwardTraverser {
 				// Loop through output arcs
 				unsigned int state_id = siter.Value();
 				Node& n = mNodes[state_id];
-//				DBG("state_id: "<<state_id);
+				//DBG("state_id: "<<state_id);
 
-				DBG("");
-				DBG(fixed << setprecision(10) << "alpha "<<state_id<<" "<<n.GetAlpha());
+				//DBG("");
+				//DBG(fixed << setprecision(10) << "alpha "<<state_id<<" "<<n.GetAlpha());
 
 				// Detections for the current state have to be filled in before traversing the arcs
 				//WordLinksToDetections(state_id);
@@ -86,8 +90,8 @@ class ForwardTraverser {
 					const string ilabel = mpSyms->Find(arc.ilabel);
 					Node& n_next = mNodes[arc.nextstate];
 
-					DBG("");
-					DBG(state_id<<" -> "<<arc.nextstate<<" ("<<ilabel<<":"<<olabel<<")");
+					//DBG("");
+					//DBG(state_id<<" -> "<<arc.nextstate<<" ("<<ilabel<<":"<<olabel<<")");
 
 					n_next.ComputeAlpha(n, arc);
 					n_next.SetStartTime(n, arc, olabel);

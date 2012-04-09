@@ -39,7 +39,7 @@ class Node_Various : public NodeBase {
 
 		void ComputeAlpha(const Node& nFrom, const Arc& arc)
 		{
-			DBG(std::fixed << std::setprecision(10) << "  alpha["<<arc.nextstate<<"] = Plus(Times("<<nFrom.mAlpha<<", "<<arc.weight<<"), "<<mAlpha<<")  = Plus("<<Times(nFrom.mAlpha, arc.weight)<<", "<<mAlpha<<") = "<< Plus(Times(nFrom.mAlpha, arc.weight), mAlpha));
+			//DBG(std::fixed << std::setprecision(10) << "  alpha["<<arc.nextstate<<"] = Plus(Times("<<nFrom.mAlpha<<", "<<arc.weight<<"), "<<mAlpha<<")  = Plus("<<Times(nFrom.mAlpha, arc.weight)<<", "<<mAlpha<<") = "<< Plus(Times(nFrom.mAlpha, arc.weight), mAlpha));
 			mAlpha = Plus(Times(nFrom.mAlpha, arc.weight), mAlpha);
 		}
 
