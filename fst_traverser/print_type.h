@@ -3,6 +3,7 @@
 
 enum PrintType {
 	PRINT_NODES_ONLY,
+	PRINT_INPUT_SYMBOLS_ONLY,
 	PRINT_ALL
 };
 

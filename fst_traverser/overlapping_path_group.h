@@ -74,7 +74,11 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Arc>::type
 				 ;
 			int idx = 0;
 			for (typename Base::const_iterator i=this->mContainer.begin(); i!=this->mContainer.end(); i++, idx++) {
+				if ((**i).GetWeight() == mBestWeight) {
+					cout << "BEST";
+				}
 				cout << "  path["<<idx<<"] " << **i << endl;
+				cout << endl;
 			}
 		}
 

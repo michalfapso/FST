@@ -53,13 +53,13 @@ class PathGeneratorRecursive : PathGenerator<Arc>
 					const ParallelArcs<Arc>& pa = i->second;
 //					DBG("pa: "<<pa);
 					bool include_arc = false;
-					bool add_path = mfPathTerminator(stateId, pa, &include_arc);
+					bool path_end = mfPathTerminator(stateId, pa, &include_arc);
 
-					if (add_path && !include_arc) { cout << "Adding path: " << path << endl; pPaths->Add(path); }
+					if (path_end && !include_arc) { cout << "Adding path: " << path << endl; pPaths->Add(path); }
 					path.push_back(&pa);
-					if (add_path && include_arc) { cout << "Adding path: " << path << endl; pPaths->Add(path); }
+					if (path_end && include_arc) { cout << "Adding path: " << path << endl; pPaths->Add(path); }
 					// dive into the link only when it is not a "terminal" link
-					if (!add_path) {
+					if (!path_end) {
 						GeneratePaths_recursive(nextstate, path, pPaths);
 					}
 					path.pop_back();

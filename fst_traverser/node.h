@@ -11,9 +11,20 @@ template <class Arc>
 class Node_Base {
 	public:
 		typedef Arc ArcType;
-		typedef std::map<string, DetectionEnd<Arc> > Word2DetectionMap;
+		friend std::ostream& operator<<(std::ostream& oss, const Node_Base<Arc>& n) {
+			return oss;
+		}
+};
 
-		Node_Base() :
+template <class NodeBase>
+class Node_Various : public NodeBase {
+	protected:
+		typedef Node_Various<NodeBase> Node;
+		typedef typename NodeBase::ArcType Arc;
+		typedef Arc ArcType;
+	public:
+		Node_Various() : 
+			NodeBase(),
 			mAlpha(Arc::Weight::Zero()),
 			mFwdPathsCount(0),
 			mFwdPhonemesCount(0),
@@ -26,13 +37,14 @@ class Node_Base {
 			mFwdPathsCount = 1;
 		}
 
-		void ComputeAlpha(const Node_Base<Arc>& nFrom, const Arc& arc)
+		void ComputeAlpha(const Node& nFrom, const Arc& arc)
 		{
 			DBG(std::fixed << std::setprecision(10) << "  alpha["<<arc.nextstate<<"] = Plus(Times("<<nFrom.mAlpha<<", "<<arc.weight<<"), "<<mAlpha<<")  = Plus("<<Times(nFrom.mAlpha, arc.weight)<<", "<<mAlpha<<") = "<< Plus(Times(nFrom.mAlpha, arc.weight), mAlpha));
 			mAlpha = Plus(Times(nFrom.mAlpha, arc.weight), mAlpha);
 		}
 
-		friend std::ostream& operator<<(std::ostream& oss, const Node_Base<Arc>& n) {
+		friend std::ostream& operator<<(std::ostream& oss, const Node& n) {
+			oss << (NodeBase)n;
 			oss << "alpha=" << n.mAlpha << " ";
 			return oss;
 		}
@@ -56,6 +68,7 @@ class Node_Base {
 template <class NodeBase>
 class Node_ParallelArcs : public NodeBase {
 	public:
+		typedef Node_ParallelArcs<NodeBase> Node;
 		typedef typename NodeBase::ArcType Arc;
 		typedef Arc ArcType;
 	public:
@@ -81,7 +94,7 @@ class Node_ParallelArcs : public NodeBase {
 			pa->Add(&arc);
 		}
 
-		friend std::ostream& operator<<(std::ostream& oss, const Node_ParallelArcs<NodeBase>& n) {
+		friend std::ostream& operator<<(std::ostream& oss, const Node& n) {
 			oss << (NodeBase)n;
 			for (typename Nextnode2ParallelArcs::const_iterator i = n.GetParallelArcs().begin(); i != n.GetParallelArcs().end(); i++) {
 				oss << "(" << i->second << " -> " << i->first << ") ";
@@ -96,6 +109,7 @@ class Node_ParallelArcs : public NodeBase {
 template <class NodeBase>
 class Node_StartTime : public NodeBase {
 	protected:
+		typedef Node_StartTime<NodeBase> Node;
 		typedef typename NodeBase::ArcType Arc;
 		typedef Arc ArcType;
 	public:
@@ -111,7 +125,7 @@ class Node_StartTime : public NodeBase {
 			return mStartTimes.empty() ? 0.0f : sum / mStartTimes.size();
 		}
 
-		void SetStartTime(const Node_StartTime<NodeBase>& nFrom, const Arc& arc, const std::string& arcLabel)
+		void SetStartTime(const Node& nFrom, const Arc& arc, const std::string& arcLabel)
 		{
 			if (arcLabel.substr(0,2) == "t=") {
 				mStartTimes.push_back(string2float(arcLabel.substr(2)));
@@ -123,9 +137,9 @@ class Node_StartTime : public NodeBase {
 			}
 		}
 
-		friend std::ostream& operator<<(std::ostream& oss, const Node_StartTime<NodeBase>& n) {
+		friend std::ostream& operator<<(std::ostream& oss, const Node& n) {
 			oss << (NodeBase)n;
-			oss << "Start Times:";
+			oss << "StartTimes:";
 			for (TimeContainer::const_iterator i=n.mStartTimes.begin(); i!=n.mStartTimes.end(); i++) {
 				oss << " " << std::setprecision(2) << *i;
 			}
@@ -136,5 +150,47 @@ class Node_StartTime : public NodeBase {
 	protected:
 		TimeContainer mStartTimes;
 };
+
+template <class NodeBase>
+class Node_BestPath : public NodeBase {
+	protected:
+		typedef Node_BestPath<NodeBase> Node;
+		typedef typename NodeBase::ArcType Arc;
+		typedef Arc ArcType;
+		typedef typename Arc::Weight Weight;
+		static const int INVALID_PATH_START_STATE_ID;
+		static const float INVALID_PATH_START_TIME;
+	public:
+		typedef PathAvgWeight<Arc> Path;
+
+		Node_BestPath() : NodeBase(), mBestPath(INVALID_PATH_START_STATE_ID, INVALID_PATH_START_TIME) {}
+
+		inline const Path& GetBestPath() const {return mBestPath;}
+		inline const void SetBestPathStartStateId(int id) {mBestPath.SetStartStateId(id);}
+		inline const void SetBestPathStartTime(float t) {mBestPath.SetStartTime(t);}
+		inline const void SetBestPathWeight(Weight w) {mBestPath.SetWeight(w);}
+
+		void ForwardBestPathFromNode(const Node& nFrom, const ParallelArcs<Arc>* pa)
+		{
+			if (nFrom.GetBestPath().GetStartStateId() != INVALID_PATH_START_STATE_ID) {
+				const Weight w = nFrom.GetBestPath().GetWeightWithArc(*pa);
+				if (GetBestPath().empty() || w.Value() < GetBestPath().GetWeight().Value()) {
+					mBestPath = nFrom.GetBestPath();
+					mBestPath.push_back(pa);
+				}
+			}
+		}
+
+		friend std::ostream& operator<<(std::ostream& oss, const Node& n) {
+			oss << (NodeBase)n;
+			oss << "BestPath:" << n.mBestPath;
+			return oss;
+		}
+
+	protected:
+		Path mBestPath;
+};
+template <class NodeBase> const int Node_BestPath<NodeBase>::INVALID_PATH_START_STATE_ID = -1;
+template <class NodeBase> const float Node_BestPath<NodeBase>::INVALID_PATH_START_TIME = -1;
 
 #endif

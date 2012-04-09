@@ -21,17 +21,28 @@ class Path : public Path_Base<Arc>::type
 {
 	protected:
 		typedef typename Path_Base<Arc>::type Base;
+		typedef typename Arc::Weight Weight;
+
+		int mStartStateId;
+		Weight mWeight;
+		float mStartTime;
+		float mEndTime;
+		unsigned int mPhonemesCount;
+
+		static const fst::SymbolTable* mspSyms;
+		static PrintType msPrintType;
 	public:
 
 		Path(int startStateId, float startTime) :
 			mStartStateId(startStateId),
-			mWeight(Arc::Weight::One()),
+			mWeight(Weight::One()),
 			mStartTime(startTime),
 			mEndTime(NO_TIME),
 			mPhonemesCount(0)
 		{}
 
 		Path(const Path& p) {
+			this->mStartStateId  = p.mStartStateId;
 			this->mWeight        = p.mWeight;
 			this->mStartTime     = p.mStartTime;
 			this->mEndTime       = p.mEndTime;
@@ -52,11 +63,17 @@ class Path : public Path_Base<Arc>::type
 			return p1->GetWeight().Value() < p2->GetWeight().Value();
 		}
 
-		inline typename Arc::Weight GetWeight()       const { return mWeight; }
-		inline int                  GetStartStateId() const { return mStartStateId; }
-		inline float                GetStartTime()    const { return mStartTime; }
-//		inline float                GetEndTime()      const { return mEndTime; }
-		inline float                GetEndTime()      const { 
+		inline void   SetStartStateId(int id) { mStartStateId = id; }
+		inline void   SetStartTime(float t)   { mStartTime = t; }
+		inline void   SetEndTime(float t)     { mEndTime = t; }
+		inline void   SetWeight(Weight w)     { mWeight = w; }
+
+		inline Weight GetWeight()       const { return mWeight; }
+		inline int    GetStartStateId() const { return mStartStateId; }
+		inline float  GetStartTime()    const { return mStartTime; }
+//		inline float  GetEndTime()      const { return mEndTime; }
+		inline float  GetEndTime()      const 
+		{
 			assert(mspSyms);
 			float end_time = -1;
 			for (typename Base::Container::const_reverse_iterator i=this->mContainer.rbegin(); i!=this->mContainer.rend(); i++) {
@@ -76,7 +93,6 @@ class Path : public Path_Base<Arc>::type
 			return end_time;
 			//throw std::runtime_error("ERROR: Path does not contain any time arc!");
 		}
-		inline void                 SetEndTime(float t)     { mEndTime = t; }
 
 		static void SetSymbols(const fst::SymbolTable* syms) { mspSyms = syms; ParallelArcs<Arc>::SetSymbols(syms); }
 		static void SetPrintType(PrintType pt) { msPrintType = pt; ParallelArcs<Arc>::SetPrintType(pt); }
@@ -102,6 +118,18 @@ class Path : public Path_Base<Arc>::type
 				const ParallelArcs<Arc>& pa = **i;
 				oss << " -- " << pa;
 			}
+			oss << endl;
+
+			PrintType pt = ParallelArcs<Arc>::GetPrintType();
+			ParallelArcs<Arc>::SetPrintType(PRINT_INPUT_SYMBOLS_ONLY);
+			oss << "phonemes: ";
+			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
+				const ParallelArcs<Arc>& pa = **i;
+				if (pa.ContainsPhoneme(mspSyms)) {
+					oss << pa << " ";
+				}
+			}
+			ParallelArcs<Arc>::SetPrintType(pt);
 			return oss;
 		}
 
@@ -115,16 +143,6 @@ class Path : public Path_Base<Arc>::type
 			}
 		}
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-	protected:
-		int mStartStateId;
-		typename Arc::Weight mWeight;
-		float mStartTime;
-		float mEndTime;
-		unsigned int mPhonemesCount;
-
-		static const fst::SymbolTable* mspSyms;
-		static PrintType msPrintType;
 };
 
 template <class Arc> const fst::SymbolTable* Path<Arc>::mspSyms = NULL;
@@ -133,16 +151,25 @@ template <class Arc> PrintType Path<Arc>::msPrintType = PRINT_ALL;
 template <class Arc>
 class PathAvgWeight : public Path<Arc>
 {
+	protected:
+		typedef typename Arc::Weight Weight;
 	public:
 		PathAvgWeight(int startStateId, float startTime) : Path<Arc>(startStateId, startTime) {}
-		virtual void push_back(const ParallelArcs<Arc>* pa) { 
+
+		Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const {
 			int c = this->size();
-			this->mWeight = (this->mWeight.Value() * c + pa->GetWeight().Value()) / (c+1);
+			return (this->mWeight.Value() * c + pa.GetWeight().Value()) / (c+1);
+		}
+		Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const {
+			int c = this->size();
+			return (this->mWeight.Value() * c - pa.GetWeight().Value()) / (c-1);
+		}
+		virtual void push_back(const ParallelArcs<Arc>* pa) { 
+			this->mWeight = GetWeightWithArc(*pa);
 			Path<Arc>::push_back(pa);
 		}
 		virtual void pop_back() { 
-			int c = this->size();
-			this->mWeight = (this->mWeight.Value() * c - this->mContainer.back()->GetWeight().Value()) / (c-1);
+			this->mWeight = GetWeightWithoutArc(*this->mContainer.back());
 			Path<Arc>::pop_back();
 		}
 };
@@ -150,14 +177,25 @@ class PathAvgWeight : public Path<Arc>
 template <class Arc>
 class PathMultWeight : public Path<Arc>
 {
+	protected:
+		typedef typename Arc::Weight Weight;
 	public:
 		PathMultWeight(int startStateId, float startTime) : Path<Arc>(startStateId, startTime) {}
+
+		Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const {
+			return this->empty ? 
+				pa.GetWeight() : 
+				fst::Times(this->mWeight, pa.GetWeight());
+		}
+		Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const {
+			return fst::Divide(this->mWeight, pa.GetWeight());
+		}
 		virtual void push_back(const ParallelArcs<Arc>* pa) { 
-			this->mWeight = fst::Times(this->mWeight, pa->GetWeight());
+			this->mWeight = GetWeightWithArc(pa);
 			Path<Arc>::push_back(pa);
 		}
 		virtual void pop_back() {
-			this->mWeight = fst::Divide(this->mWeight, this->mContainer.back()->GetWeight());
+			this->mWeight = GetWeightWithoutArc(this->mContainer.back());
 			Path<Arc>::pop_back();
 		}
 };

@@ -11,8 +11,9 @@ struct NodesElementType {
 	typedef 
 		Node_ParallelArcs < 
 		Node_StartTime < 
+		Node_Various <
 		Node_Base <Arc> 
-		> > type;
+		> > > type;
 };
 
 template <class Arc>
@@ -22,9 +23,8 @@ class Nodes : public IndexedContainerInterface< std::vector< typename NodesEleme
 		typedef typename NodesElementType<Arc>::type Node;
 
 		Nodes(const fst::Fst<Arc>& fst) {
-			using namespace fst;
 			size_t nstates = 0;
-			for (StateIterator<Fst<Arc>> siter(fst); !siter.Done(); siter.Next()) {
+			for (fst::StateIterator<fst::Fst<Arc>> siter(fst); !siter.Done(); siter.Next()) {
 				++nstates;
 			}
 			this->mContainer.resize(nstates);
@@ -32,6 +32,10 @@ class Nodes : public IndexedContainerInterface< std::vector< typename NodesEleme
 			(*this)[0].InitStartNode();
 		}
 
+		Nodes(const Nodes<Arc>& nodes) {
+			this->mContainer = nodes.mContainer;
+		}
+		
 		void InitializeParallelArcs(const fst::Fst<Arc>& fst) 
 		{
 			using namespace fst;

@@ -27,6 +27,15 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 
 		inline typename Arc::Weight GetWeight() const { return mWeight; }
 		inline int GetNextState() const { return this->empty() ? -1 : (*this->begin())->nextstate; }
+		bool ContainsPhoneme(const fst::SymbolTable* syms) const {
+			if (!syms) { return false; }
+			bool res = false;
+			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
+				const Arc& a = **i;
+				res |= is_phoneme(syms->Find(a.ilabel));
+			}
+			return res;
+		}
 
 		//--------------------------------------------------
 		// PRINTING
@@ -59,19 +68,36 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			}
 		}
 
-		friend std::ostream& operator<<(std::ostream& oss, const ParallelArcs<Arc>& pa) {
-			if (msPrintType == PRINT_ALL) {
-				return pa.PrintAllInfo(oss);
-			} else if (msPrintType == PRINT_NODES_ONLY) {
-				return pa.PrintNodesOnly(oss);
+		std::ostream& PrintInputSymbolsOnly(std::ostream& oss) const {
+			if (this->empty()) {
+				return oss << "[EMPTY]";
 			} else {
-				throw std::runtime_error("ERROR: Unknown print type of Path!");
+				oss << "[";
+				string separator = "";
+				for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
+					oss << separator;
+					const Arc& a = **i;
+					if (mspSyms) {oss << mspSyms->Find(a.ilabel);} else {oss << a.ilabel;}
+					separator = " ";
+				}
+				oss << "] ";
+				return oss;
+			}
+		}
+
+		friend std::ostream& operator<<(std::ostream& oss, const ParallelArcs<Arc>& pa) {
+			switch (msPrintType) {
+				case PRINT_ALL: return pa.PrintAllInfo(oss);
+				case PRINT_NODES_ONLY: return pa.PrintNodesOnly(oss);
+				case PRINT_INPUT_SYMBOLS_ONLY: return pa.PrintInputSymbolsOnly(oss);
+				default: throw std::runtime_error("ERROR: Unknown print type of Path!");
 			}
 		}
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		static void SetSymbols(const fst::SymbolTable* syms) { mspSyms = syms; }
 		static void SetPrintType(PrintType pt) { msPrintType = pt; }
+		static PrintType GetPrintType() { return msPrintType; }
 
 	protected:
 		typename Arc::Weight mWeight;

@@ -13,7 +13,7 @@ class PathTerminator {
 			return true; 
 		}
 		// For ParallelArcs:
-		virtual bool operator()(int stateId, const ParallelArcs<Arc>& pa, bool* pIncludeArc)
+		virtual bool operator()(int stateId, const ParallelArcs<Arc>& pa, bool* pIncludeArc) const
 		{
 			bool add_path = false;
 			for (typename ParallelArcs<Arc>::const_iterator i = pa.begin(); i != pa.end(); i++) {
