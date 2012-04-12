@@ -14,12 +14,15 @@
 #include "fst_properties.h"
 #include "path_generator_forward.h"
 #include "is_phoneme.h"
+#include "path.h"
 
 using namespace fst;
 using namespace std;
 
-template <class Arc>
+template <class Path>
 class ForwardTraverser {
+	public:
+		typedef typename Path::Arc Arc;
 	protected:
 		//--------------------------------------------------
 		// PathTerminatorTermEnd {{{
@@ -47,7 +50,7 @@ class ForwardTraverser {
 		typedef typename Arc::Weight Weight;
 		typedef typename Nodes<Arc>::Node Node;
 
-		ForwardTraverser(const Fst<Arc>* pFst, const SymbolTable* pSyms, PathPool<Arc>* pPathPool) :  
+		ForwardTraverser(const Fst<Arc>* pFst, const SymbolTable* pSyms, PathPool<Path>* pPathPool) :  
 			mpFst(pFst),
 			mpSyms(pSyms),
 			mNodes(*pFst),
@@ -57,15 +60,15 @@ class ForwardTraverser {
 			if (!FstProperties::IsTopologicallySorted(*mpFst)) {
 				THROW("ERROR: ForwardTraverser: Fst is not topologically sorted!");
 			}
-			Path<Arc>::SetSymbols(mpSyms);
-			Path<Arc>::SetPrintType(PRINT_PHONEMES_ONLY); // PRINT_PHONEMES_ONLY | PRINT_NODES_ONLY | PRINT_ALL
+			Path::SetSymbols(mpSyms);
+			Path::SetPrintType(PRINT_ALL); // PRINT_PHONEMES_ONLY | PRINT_NODES_ONLY | PRINT_ALL
 		}
 	
 		void Traverse()
 		{
 			DBG("Traverse()");
 
-			OverlappingPathGroupList<Arc> all_paths;
+			OverlappingPathGroupList<Path> all_paths;
 			// Loop through states
 			for (StateIterator<Fst<Arc>> siter(*mpFst); !siter.Done(); siter.Next())
 			{
@@ -91,8 +94,8 @@ class ForwardTraverser {
 						DBG("TERM_START");
 						DBG(n);
 						PathTerminatorTermEnd path_term(*mpSyms);
-						PathGeneratorForward<Arc> path_gen(*mpFst, mNodes, path_term, PathGenerator<Arc>::FINAL_NODE_IGNORE);
-						OverlappingPathGroupList<Arc> paths;
+						PathGeneratorForward<Path> path_gen(*mpFst, mNodes, path_term, PathGenerator<Path>::FINAL_NODE_IGNORE);
+						OverlappingPathGroupList<Path> paths;
 						path_gen.GeneratePaths(arc.nextstate, n.GetStartTime(), &paths);
 						all_paths.Add(paths);
 						DBG("Generated paths:");
@@ -118,7 +121,7 @@ class ForwardTraverser {
 		const SymbolTable* mpSyms;
 		
 		Nodes<Arc> mNodes;
-		PathPool<Arc>* mpPathPool;
+		PathPool<Path>* mpPathPool;
 		FstBackwardArcs<Arc> mBackwardArcs;
 };
 

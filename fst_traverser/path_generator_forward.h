@@ -4,24 +4,25 @@
 #include "path_generator.h"
 #include "node.h"
 
-template <class Arc>
-class PathGeneratorForward : public PathGenerator<Arc>
+template <class Path>
+class PathGeneratorForward : public PathGenerator<Path>
 {
 	protected:
+		typedef typename Path::Arc Arc;
 		typedef typename Nodes<Arc>::Node Node;
 	public:
 		PathGeneratorForward(
 				const Fst<Arc>& fst, 
 				const Nodes<Arc>& nodes, 
 				const PathTerminator<Arc>& pathTerminator, 
-				typename PathGenerator<Arc>::FinalNodePolicy finalNodePolicy) : 
-			PathGenerator<Arc>(fst, nodes, pathTerminator, finalNodePolicy)
+				typename PathGenerator<Path>::FinalNodePolicy finalNodePolicy) : 
+			PathGenerator<Path>(fst, nodes, pathTerminator, finalNodePolicy)
 		{
 		}
 
-		virtual void GeneratePaths(int startStateId, float startTime, OverlappingPathGroupList<Arc>* pPaths)
+		virtual void GeneratePaths(int startStateId, float startTime, OverlappingPathGroupList<Path>* pPaths)
 		{
-			typedef Node_BestPath< Node_Base<Arc> > NBP;
+			typedef Node_BestPath< Path, Node_Base<Arc> > NBP;
 			typedef vector< NBP > VNBP;
 			VNBP vnbp;
 			vnbp.resize(this->mNodes.size());
@@ -45,7 +46,7 @@ class PathGeneratorForward : public PathGenerator<Arc>
 					bool path_end = mfPathTerminator(state_id, pa, &include_arc);
 					if (path_end) {
 						if (include_arc) {
-							typename NBP::Path p(vnbp[state_id].GetBestPath());
+							Path p(vnbp[state_id].GetBestPath());
 							p.push_back(&pa);
 							pPaths->Add(p);
 						} else {

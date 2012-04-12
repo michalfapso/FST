@@ -11,14 +11,16 @@
 #include "parallel_arcs.h"
 #include "print_type.h"
 
-template <class Arc>
+template <class TArc>
 struct Path_Base {
-	typedef ContainerInterface< std::list< const ParallelArcs<Arc>* > > type;
+	typedef ContainerInterface< std::list< const ParallelArcs<TArc>* > > type;
 };
 
-template <class Arc>
-class Path : public Path_Base<Arc>::type
+template <class TArc>
+class Path : public Path_Base<TArc>::type
 {
+	public:
+		typedef TArc Arc;
 	protected:
 		typedef typename Path_Base<Arc>::type Base;
 		typedef typename Arc::Weight Weight;
@@ -50,12 +52,15 @@ class Path : public Path_Base<Arc>::type
 			this->mContainer     = p.mContainer;
 		}
 
-		virtual void push_back(const ParallelArcs<Arc>* pa) { 
-			// Weight is computed in derived classes
+		virtual Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const = 0;
+		virtual Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const = 0;
+
+		void push_back(const ParallelArcs<Arc>* pa) { 
+			this->mWeight = GetWeightWithArc(*pa);
 			this->mContainer.push_back(pa); 
 		}
-		virtual void pop_back() { 
-			// Weight is computed in derived classes
+		void pop_back() {
+			this->mWeight = GetWeightWithoutArc(*this->mContainer.back());
 			this->mContainer.pop_back();
 		}
 
@@ -150,15 +155,16 @@ class Path : public Path_Base<Arc>::type
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 };
 
-template <class Arc> const fst::SymbolTable* Path<Arc>::mspSyms = NULL;
-template <class Arc> PrintType Path<Arc>::msPrintType = PRINT_ALL;
+template <class TArc> const fst::SymbolTable* Path<TArc>::mspSyms = NULL;
+template <class TArc> PrintType Path<TArc>::msPrintType = PRINT_ALL;
 
-template <class Arc>
-class PathAvgWeight : public Path<Arc>
+template <class TArc>
+class PathAvgWeight : public Path<TArc>
 {
-	protected:
-		typedef typename Arc::Weight Weight;
 	public:
+		typedef TArc Arc;
+		typedef typename Arc::Weight Weight;
+
 		PathAvgWeight(int startStateId, float startTime) : Path<Arc>(startStateId, startTime) {}
 
 		Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const {
@@ -169,22 +175,15 @@ class PathAvgWeight : public Path<Arc>
 			int c = this->size();
 			return (this->mWeight.Value() * c - pa.GetWeight().Value()) / (c-1);
 		}
-		virtual void push_back(const ParallelArcs<Arc>* pa) { 
-			this->mWeight = GetWeightWithArc(*pa);
-			Path<Arc>::push_back(pa);
-		}
-		virtual void pop_back() { 
-			this->mWeight = GetWeightWithoutArc(*this->mContainer.back());
-			Path<Arc>::pop_back();
-		}
 };
 
-template <class Arc>
-class PathMultWeight : public Path<Arc>
+template <class TArc>
+class PathMultWeight : public Path<TArc>
 {
-	protected:
-		typedef typename Arc::Weight Weight;
 	public:
+		typedef TArc Arc;
+		typedef typename Arc::Weight Weight;
+
 		PathMultWeight(int startStateId, float startTime) : Path<Arc>(startStateId, startTime) {}
 
 		Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const {
@@ -194,14 +193,6 @@ class PathMultWeight : public Path<Arc>
 		}
 		Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const {
 			return fst::Divide(this->mWeight, pa.GetWeight());
-		}
-		virtual void push_back(const ParallelArcs<Arc>* pa) { 
-			this->mWeight = GetWeightWithArc(*pa);
-			Path<Arc>::push_back(pa);
-		}
-		virtual void pop_back() {
-			this->mWeight = GetWeightWithoutArc(*this->mContainer.back());
-			Path<Arc>::pop_back();
 		}
 };
 

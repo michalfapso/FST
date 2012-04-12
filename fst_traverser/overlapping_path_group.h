@@ -7,18 +7,18 @@
 #include "path.h"
 #include "container_interface.h"
 
-template <class Arc>
+template <class Path>
 struct OverlappingPathGroup_Base {
-	typedef ContainerInterface< std::list< Path<Arc>* > > type;
+	typedef ContainerInterface< std::list< Path* > > type;
 };
 
-template <class Arc>
-class OverlappingPathGroup : public OverlappingPathGroup_Base<Arc>::type
+template <class Path>
+class OverlappingPathGroup : public OverlappingPathGroup_Base<Path>::type
 {
 	protected:
-		typedef typename OverlappingPathGroup_Base<Arc>::type Base;
+		typedef typename OverlappingPathGroup_Base<Path>::type Base;
 	public:
-		OverlappingPathGroup(const Path<Arc>& p) :
+		OverlappingPathGroup(const Path& p) :
 			mStartTime(p.GetStartTime()),
 			mEndTime(p.GetEndTime()),
 			mWeight(p.GetWeight()),
@@ -26,7 +26,7 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Arc>::type
 //			mPhonemesCount(p.mPhonemesCount),
 			mPathsCount(1)
 		{
-			this->mContainer.push_back(new Path<Arc>(p));
+			this->mContainer.push_back(new Path(p));
 		}
 
 		~OverlappingPathGroup() {
@@ -39,9 +39,9 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Arc>::type
 			return endTime > mStartTime && startTime < mEndTime;
 		}
 
-		void Add(const Path<Arc>& pRef) {
+		void Add(const Path& pRef) {
 			//cerr << "OverlappingPathGroup::Add("<<startTime<<", "<<endTime<<", "<<weight<<") ["<<mStartTime<<", "<<mEndTime<<", "<<mWeight<<"]" << endl;
-			Path<Arc>* p = new Path<Arc>(pRef); // Create a copy
+			Path* p = new Path(pRef); // Create a copy
 			this->mContainer.push_back(p);
 
 			if (mBestWeight.Value() > p->GetWeight().Value()) {
@@ -86,8 +86,8 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Arc>::type
 		static const char FIELD_SEPARATOR = ' ';
 		float mStartTime;
 		float mEndTime;
-		typename Arc::Weight mWeight;
-		typename Arc::Weight mBestWeight;
+		typename Path::Arc::Weight mWeight;
+		typename Path::Arc::Weight mBestWeight;
 //		unsigned int mPhonemesCount;
 		unsigned int mPathsCount;
 };

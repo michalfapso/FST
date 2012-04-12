@@ -3,8 +3,8 @@
 
 #include "path_generator.h"
 
-template <class Arc>
-class PathGeneratorRecursive : PathGenerator<Arc>
+template <class Path>
+class PathGeneratorRecursive : PathGenerator<Path>
 {
 	public:
 		PathGeneratorRecursive(
@@ -12,11 +12,11 @@ class PathGeneratorRecursive : PathGenerator<Arc>
 				const Nodes<Arc>& nodes, 
 				const PathTerminator<Arc>& pathTerminator, 
 				PathGenerator::FinalNodePolicy finalNodePolicy) : 
-			PathGenerator(fst, nodes, pathTerminator, finalNodePolicy)
+			PathGenerator<Path>(fst, nodes, pathTerminator, finalNodePolicy)
 		{
 		}
 
-		virtual void GeneratePaths(int startStateId, float startTime, OverlappingPathGroupList<Arc>* pPaths)
+		virtual void GeneratePaths(int startStateId, float startTime, OverlappingPathGroupList<Path>* pPaths)
 		{
 			DBG("PathGenerator::GeneratePaths()");
 			PathAvgWeight<Arc> init_path(startStateId, startTime);
@@ -27,7 +27,7 @@ class PathGeneratorRecursive : PathGenerator<Arc>
 		}
 	protected:
 
-		void GeneratePaths_recursive(typename Arc::StateId stateId, Path<Arc>& path, OverlappingPathGroupList<Arc> *pPaths)
+		void GeneratePaths_recursive(typename Arc::StateId stateId, Path<Arc>& path, OverlappingPathGroupList<Path> *pPaths)
 		{
 //			DBG("GeneratePaths_recursive() path:"<<path);
 			ArcIterator< Fst<Arc> > iarc(mFst, stateId);

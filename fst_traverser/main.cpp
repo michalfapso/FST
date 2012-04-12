@@ -117,9 +117,11 @@ int main(int argc, char **argv)
 			cerr << "done" << endl;
 		}
 
-		PathPool<Arc> pathpool(min_phonemes_count_threshold);
+		typedef PathAvgWeight<Arc> Path;
 
-		ForwardTraverser<Arc> trav(fst, syms, &pathpool);
+		PathPool<Path> pathpool(min_phonemes_count_threshold);
+
+		ForwardTraverser<Path> trav(fst, syms, &pathpool);
 
 		trav.Traverse();
 

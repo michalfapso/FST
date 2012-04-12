@@ -7,10 +7,10 @@
 #include <algorithm>
 #include "string2float.h"
 
-template <class Arc>
+template <class TArc>
 class Node_Base {
 	public:
-		typedef Arc ArcType;
+		typedef TArc Arc;
 		friend std::ostream& operator<<(std::ostream& oss, const Node_Base<Arc>& n) {
 			return oss;
 		}
@@ -20,8 +20,7 @@ template <class NodeBase>
 class Node_Various : public NodeBase {
 	protected:
 		typedef Node_Various<NodeBase> Node;
-		typedef typename NodeBase::ArcType Arc;
-		typedef Arc ArcType;
+		typedef typename NodeBase::Arc Arc;
 	public:
 		Node_Various() : 
 			NodeBase(),
@@ -69,8 +68,7 @@ template <class NodeBase>
 class Node_ParallelArcs : public NodeBase {
 	public:
 		typedef Node_ParallelArcs<NodeBase> Node;
-		typedef typename NodeBase::ArcType Arc;
-		typedef Arc ArcType;
+		typedef typename NodeBase::Arc Arc;
 	public:
 		typedef boost::unordered_map<int, ParallelArcs<Arc> > Nextnode2ParallelArcs;
 
@@ -110,8 +108,7 @@ template <class NodeBase>
 class Node_StartTime : public NodeBase {
 	protected:
 		typedef Node_StartTime<NodeBase> Node;
-		typedef typename NodeBase::ArcType Arc;
-		typedef Arc ArcType;
+		typedef typename NodeBase::Arc Arc;
 	public:
 		typedef std::vector<float> TimeContainer;
 
@@ -151,17 +148,16 @@ class Node_StartTime : public NodeBase {
 		TimeContainer mStartTimes;
 };
 
-template <class NodeBase>
+template <class Path, class NodeBase>
 class Node_BestPath : public NodeBase {
 	protected:
-		typedef Node_BestPath<NodeBase> Node;
-		typedef typename NodeBase::ArcType Arc;
-		typedef Arc ArcType;
+		typedef Node_BestPath<Path, NodeBase> Node;
+		typedef typename NodeBase::Arc Arc;
 		typedef typename Arc::Weight Weight;
 		static const int INVALID_PATH_START_STATE_ID;
 		static const float INVALID_PATH_START_TIME;
 	public:
-		typedef PathAvgWeight<Arc> Path;
+		//typedef PathAvgWeight<Arc> Path;
 		//typedef PathMultWeight<Arc> Path;
 
 		Node_BestPath() : NodeBase(), mBestPath(INVALID_PATH_START_STATE_ID, INVALID_PATH_START_TIME) {}
@@ -191,7 +187,7 @@ class Node_BestPath : public NodeBase {
 	protected:
 		Path mBestPath;
 };
-template <class NodeBase> const int Node_BestPath<NodeBase>::INVALID_PATH_START_STATE_ID = -1;
-template <class NodeBase> const float Node_BestPath<NodeBase>::INVALID_PATH_START_TIME = -1;
+template <class Path, class NodeBase> const int Node_BestPath<Path, NodeBase>::INVALID_PATH_START_STATE_ID = -1;
+template <class Path, class NodeBase> const float Node_BestPath<Path, NodeBase>::INVALID_PATH_START_TIME = -1;
 
 #endif

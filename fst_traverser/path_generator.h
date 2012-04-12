@@ -8,10 +8,11 @@
 #include "fst_properties.h"
 #include "path_terminator.h"
 
-template <class Arc>
+template <class Path>
 class PathGenerator
 {
 	public:
+		typedef typename Path::Arc Arc;
 		enum FinalNodePolicy {
 			FINAL_NODE_ADD_PATH,
 			FINAL_NODE_IGNORE
@@ -32,7 +33,7 @@ class PathGenerator
 			}
 		}
 
-		virtual void GeneratePaths(int startStateId, float startTime, OverlappingPathGroupList<Arc>* pPaths) = 0;
+		virtual void GeneratePaths(int startStateId, float startTime, OverlappingPathGroupList<Path>* pPaths) = 0;
 
 	protected:
 		const Fst<Arc>& mFst;
