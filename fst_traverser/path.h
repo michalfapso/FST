@@ -188,7 +188,7 @@ class PathMultWeight : public Path<Arc>
 		PathMultWeight(int startStateId, float startTime) : Path<Arc>(startStateId, startTime) {}
 
 		Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const {
-			return this->empty ? 
+			return this->empty() ? 
 				pa.GetWeight() : 
 				fst::Times(this->mWeight, pa.GetWeight());
 		}
@@ -196,11 +196,11 @@ class PathMultWeight : public Path<Arc>
 			return fst::Divide(this->mWeight, pa.GetWeight());
 		}
 		virtual void push_back(const ParallelArcs<Arc>* pa) { 
-			this->mWeight = GetWeightWithArc(pa);
+			this->mWeight = GetWeightWithArc(*pa);
 			Path<Arc>::push_back(pa);
 		}
 		virtual void pop_back() {
-			this->mWeight = GetWeightWithoutArc(this->mContainer.back());
+			this->mWeight = GetWeightWithoutArc(*this->mContainer.back());
 			Path<Arc>::pop_back();
 		}
 };

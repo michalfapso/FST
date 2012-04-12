@@ -162,6 +162,7 @@ class Node_BestPath : public NodeBase {
 		static const float INVALID_PATH_START_TIME;
 	public:
 		typedef PathAvgWeight<Arc> Path;
+		//typedef PathMultWeight<Arc> Path;
 
 		Node_BestPath() : NodeBase(), mBestPath(INVALID_PATH_START_STATE_ID, INVALID_PATH_START_TIME) {}
 

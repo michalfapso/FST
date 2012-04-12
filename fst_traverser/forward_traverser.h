@@ -58,17 +58,14 @@ class ForwardTraverser {
 				THROW("ERROR: ForwardTraverser: Fst is not topologically sorted!");
 			}
 			Path<Arc>::SetSymbols(mpSyms);
-			//mBackwardArcs.Print(*mpSyms);
-
-			//Path<Arc>::SetPrintType(PRINT_ALL);
-			//Path<Arc>::SetPrintType(PRINT_NODES_ONLY);
-			Path<Arc>::SetPrintType(PRINT_PHONEMES_ONLY);
+			Path<Arc>::SetPrintType(PRINT_PHONEMES_ONLY); // PRINT_PHONEMES_ONLY | PRINT_NODES_ONLY | PRINT_ALL
 		}
 	
 		void Traverse()
 		{
 			DBG("Traverse()");
 
+			OverlappingPathGroupList<Arc> all_paths;
 			// Loop through states
 			for (StateIterator<Fst<Arc>> siter(*mpFst); !siter.Done(); siter.Next())
 			{
@@ -76,12 +73,6 @@ class ForwardTraverser {
 				unsigned int state_id = siter.Value();
 				Node& n = mNodes[state_id];
 				//DBG("state_id: "<<state_id);
-
-				//DBG("");
-				//DBG(fixed << setprecision(10) << "alpha "<<state_id<<" "<<n.GetAlpha());
-
-				// Detections for the current state have to be filled in before traversing the arcs
-				//WordLinksToDetections(state_id);
 
 				for (ArcIterator<Fst<Arc>> aiter(*mpFst, state_id); !aiter.Done(); aiter.Next())
 				{
@@ -103,6 +94,7 @@ class ForwardTraverser {
 						PathGeneratorForward<Arc> path_gen(*mpFst, mNodes, path_term, PathGenerator<Arc>::FINAL_NODE_IGNORE);
 						OverlappingPathGroupList<Arc> paths;
 						path_gen.GeneratePaths(arc.nextstate, n.GetStartTime(), &paths);
+						all_paths.Add(paths);
 						DBG("Generated paths:");
 						paths.Print("_DETECTION_");
 						DBG("Generated paths end");
@@ -113,6 +105,9 @@ class ForwardTraverser {
 					n_next.AddFwdPhonemesCount(n.GetFwdPhonemesCount() + (is_phoneme(olabel) ? n.GetFwdPathsCount() : 0));
 				}
 			}
+			DBG("Generated all_paths:");
+			all_paths.Print("_DETECTION_");
+			DBG("Generated all_paths end");
 		}
 
 

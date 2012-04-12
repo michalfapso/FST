@@ -21,6 +21,18 @@ class OverlappingPathGroupList : public OverlappingPathGroupList_Base<Arc>::type
 			}
 		}
 
+		void Add(const OverlappingPathGroup<Arc>& pg) {
+			for (typename OverlappingPathGroup<Arc>::const_iterator i = pg.begin(); i!=pg.end(); i++) {
+				this->Add(**i);
+			}
+		}
+
+		void Add(const OverlappingPathGroupList<Arc>& pgl) {
+			for (typename Base::const_iterator i = pgl.begin(); i != pgl.end(); i++) {
+				this->Add(**i);
+			}
+		}
+
 		void Add(const Path<Arc>& p) {
 			// Start searching from the end
 			for (typename Base::Container::const_reverse_iterator i = this->mContainer.rbegin(); i != this->mContainer.rend(); i++) {
