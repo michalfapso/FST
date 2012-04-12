@@ -50,11 +50,10 @@ class ForwardTraverser {
 		typedef typename Arc::Weight Weight;
 		typedef typename Nodes<Arc>::Node Node;
 
-		ForwardTraverser(const Fst<Arc>* pFst, const SymbolTable* pSyms, PathPool<Path>* pPathPool) :  
+		ForwardTraverser(const Fst<Arc>* pFst, const SymbolTable* pSyms) :  
 			mpFst(pFst),
 			mpSyms(pSyms),
 			mNodes(*pFst),
-			mpPathPool(pPathPool),
 			mBackwardArcs(*pFst)
 		{ 
 			if (!FstProperties::IsTopologicallySorted(*mpFst)) {
@@ -64,11 +63,10 @@ class ForwardTraverser {
 			Path::SetPrintType(PRINT_ALL); // PRINT_PHONEMES_ONLY | PRINT_NODES_ONLY | PRINT_ALL
 		}
 	
-		void Traverse()
+		void Traverse(OverlappingPathGroupList<Path>* pPathsOut)
 		{
 			DBG("Traverse()");
 
-			OverlappingPathGroupList<Path> all_paths;
 			PathTerminatorTermEnd path_term(*mpSyms);
 			PathGeneratorForward<Path> path_gen(*mpFst, mNodes, path_term, PathGenerator<Path>::FINAL_NODE_IGNORE);
 
@@ -94,11 +92,11 @@ class ForwardTraverser {
 					n_next.SetStartTime(n, arc, olabel);
 
 					if (ilabel == "TERM_START") {
-						DBG("TERM_START");
-						DBG(n);
+						//DBG("TERM_START");
+						//DBG(n);
 						OverlappingPathGroupList<Path> paths;
 						path_gen.GeneratePaths(arc.nextstate, n.GetStartTime(), &paths);
-						all_paths.Add(paths);
+						pPathsOut->Add(paths);
 						//DBG("Generated paths:");
 						//OverlappingPathGroup<Path>::PrintAllPathsInGroup(true);
 						//OverlappingPathGroup<Path>::PrintBestPathInGroup(false);
@@ -111,11 +109,6 @@ class ForwardTraverser {
 					n_next.AddFwdPhonemesCount(n.GetFwdPhonemesCount() + (is_phoneme(olabel) ? n.GetFwdPathsCount() : 0));
 				}
 			}
-			DBG("Generated all_paths:");
-			OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
-			OverlappingPathGroup<Path>::PrintBestPathInGroup(true);
-			all_paths.Print("_DETECTION_");
-			DBG("Generated all_paths end");
 		}
 
 
@@ -126,7 +119,6 @@ class ForwardTraverser {
 		const SymbolTable* mpSyms;
 		
 		Nodes<Arc> mNodes;
-		PathPool<Path>* mpPathPool;
 		FstBackwardArcs<Arc> mBackwardArcs;
 };
 

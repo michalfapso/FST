@@ -39,7 +39,6 @@ struct OverlappedScoreType {
 
 int main(int argc, char **argv)
 {
-	unsigned int min_phonemes_count_threshold = 0;
 	char * pfst_filename = 0;
 	char * psyms_filename = 0;
 	float threshold = FLT_MAX;
@@ -66,11 +65,7 @@ int main(int argc, char **argv)
 			}
 		}
 */
-		if (strcmp(argv[i], "--min-phonemes-count-threshold") == 0) {
-			i++;
-			min_phonemes_count_threshold = atol(argv[i]);
-		} 
-		else if (strcmp(argv[i], "--symbols") == 0) {
+		if (strcmp(argv[i], "--symbols") == 0) {
 			i++;
 			psyms_filename = argv[i];
 		} 
@@ -119,12 +114,16 @@ int main(int argc, char **argv)
 
 		typedef PathAvgWeight<Arc> Path; // PathAvgWeight | PathMultWeight
 
-		PathPool<Path> pathpool(min_phonemes_count_threshold);
+		OverlappingPathGroupList<Path> paths;
 
-		ForwardTraverser<Path> trav(fst, syms, &pathpool);
+		ForwardTraverser<Path> trav(fst, syms);
+		trav.Traverse(&paths);
 
-		trav.Traverse();
-
+		DBG("Generated paths:");
+		OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
+		OverlappingPathGroup<Path>::PrintBestPathInGroup(true);
+		paths.Print("_DETECTION_");
+		DBG("Generated paths end");
 //		pathpool.Print();
 	}
 	delete fst;

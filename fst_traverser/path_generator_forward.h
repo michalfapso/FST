@@ -27,12 +27,11 @@ class PathGeneratorForward : public PathGenerator<Path>
 			VNBP vnbp;
 			vnbp.resize(this->mNodes.size());
 
-			DBG("PathGeneratorForward::GeneratePaths()");
+			//DBG("PathGeneratorForward::GeneratePaths()");
 
 			vnbp[startStateId].SetBestPathStartStateId(startStateId);
 			vnbp[startStateId].SetBestPathStartTime(this->mNodes[startStateId].GetStartTime());
-//			vnbp[startStateId].SetBestPathWeight();
-			DBG("vnbp["<<startStateId<<"]:"<<vnbp[startStateId]);
+			//DBG("vnbp["<<startStateId<<"]:"<<vnbp[startStateId]);
 			for (unsigned int state_id = startStateId; state_id < this->mNodes.size(); state_id++)
 			{
 				if (vnbp[state_id].GetBestPath())
