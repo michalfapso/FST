@@ -167,9 +167,13 @@ class Node_BestPath : public NodeBase {
 		inline const void SetBestPathStartTime(float t) {mBestPath.SetStartTime(t);}
 		inline const void SetBestPathWeight(Weight w) {mBestPath.SetWeight(w);}
 
+		bool IsValidBestPathNode() const {
+			return GetBestPath().GetStartStateId() != INVALID_PATH_START_STATE_ID;
+		}
+
 		void ForwardBestPathFromNode(const Node& nFrom, const ParallelArcs<Arc>* pa)
 		{
-			if (nFrom.GetBestPath().GetStartStateId() != INVALID_PATH_START_STATE_ID) {
+			if (nFrom.IsValidBestPathNode()) {
 				const Weight w = nFrom.GetBestPath().GetWeightWithArc(*pa);
 				if (GetBestPath().empty() || w.Value() < GetBestPath().GetWeight().Value()) {
 					mBestPath = nFrom.GetBestPath();

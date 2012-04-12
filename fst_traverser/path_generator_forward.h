@@ -32,9 +32,10 @@ class PathGeneratorForward : public PathGenerator<Path>
 			vnbp[startStateId].SetBestPathStartStateId(startStateId);
 			vnbp[startStateId].SetBestPathStartTime(this->mNodes[startStateId].GetStartTime());
 //			vnbp[startStateId].SetBestPathWeight();
-			DBG("vnbp[startStateId]:"<<vnbp[startStateId]);
+			DBG("vnbp["<<startStateId<<"]:"<<vnbp[startStateId]);
 			for (unsigned int state_id = startStateId; state_id < this->mNodes.size(); state_id++)
 			{
+				if (!vnbp[state_id].IsValidBestPathNode()) continue;
 				const Node& n = this->mNodes[state_id];
 				// Loop through n.GetParallelArcs()
 				for (typename Node::Nextnode2ParallelArcs::const_iterator i = n.GetParallelArcs().begin(); i != n.GetParallelArcs().end(); i++) 

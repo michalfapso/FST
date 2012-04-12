@@ -77,7 +77,7 @@ class Path : public Path_Base<TArc>::type
 		inline int    GetStartStateId() const { return mStartStateId; }
 		inline float  GetStartTime()    const { return mStartTime; }
 //		inline float  GetEndTime()      const { return mEndTime; }
-		inline float  GetEndTime()      const 
+		float GetEndTime() const 
 		{
 			assert(mspSyms);
 			float end_time = -1;
@@ -118,6 +118,7 @@ class Path : public Path_Base<TArc>::type
 		std::ostream& PrintAllInfo(std::ostream& oss) const {
 			oss << std::setprecision(2) << "t[" << GetStartTime() << ".." << GetEndTime() << "] ";
 			oss << std::setprecision(4) << "w:" << GetWeight() << " ";
+			oss << "length:" << this->size() << " ";
 			oss << mStartStateId;
 			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
 				const ParallelArcs<Arc>& pa = **i;

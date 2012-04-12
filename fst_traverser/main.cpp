@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 			cerr << "done" << endl;
 		}
 
-		typedef PathAvgWeight<Arc> Path;
+		typedef PathAvgWeight<Arc> Path; // PathAvgWeight | PathMultWeight
 
 		PathPool<Path> pathpool(min_phonemes_count_threshold);
 
