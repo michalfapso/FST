@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
 		trav.Traverse();
 
-		pathpool.Print();
+//		pathpool.Print();
 	}
 	delete fst;
 

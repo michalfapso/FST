@@ -23,7 +23,7 @@ class OverlappingPathGroupList : public OverlappingPathGroupList_Base<Path>::typ
 
 		void Add(const OverlappingPathGroup<Path>& pg) {
 			for (typename OverlappingPathGroup<Path>::const_iterator i = pg.begin(); i!=pg.end(); i++) {
-				this->Add(**i);
+				this->Add(*i);
 			}
 		}
 
