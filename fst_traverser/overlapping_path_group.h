@@ -9,7 +9,7 @@
 
 template <class Path>
 struct OverlappingPathGroup_Base {
-	typedef ContainerInterface< std::list< Path > > type;
+	typedef ContainerInterface< std::list< Path* > > type;
 };
 
 template <class Path>
@@ -21,35 +21,32 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Path>::type
 		OverlappingPathGroup(const Path& p) :
 			mStartTime(p.GetStartTime()),
 			mEndTime(p.GetEndTime()),
-			mWeight(p.GetWeight()),
-			mBestWeight(p.GetWeight())
+			mpBestPath(new Path(p))
 //			mPhonemesCount(p.mPhonemesCount),
 		{
-			this->mContainer.push_back(p);
+			this->mContainer.push_back(mpBestPath);
 		}
 
-//		~OverlappingPathGroup() {
-//			for (typename Base::const_iterator i=this->mContainer.begin(); i!=this->mContainer.end(); i++) {
-//				delete *i;
-//			}
-//		}
+		~OverlappingPathGroup() {
+			for (typename Base::const_iterator i=this->mContainer.begin(); i!=this->mContainer.end(); i++) {
+				delete *i;
+			}
+		}
 
 		bool IsOverlapping(float startTime, float endTime) {
 			return endTime > mStartTime && startTime < mEndTime;
 		}
 
-		void Add(const Path& p) {
-			//cerr << "OverlappingPathGroup::Add("<<startTime<<", "<<endTime<<", "<<weight<<") ["<<mStartTime<<", "<<mEndTime<<", "<<mWeight<<"]" << endl;
-
-			if (mBestWeight.Value() > p.GetWeight().Value()) {
-				mBestWeight = p.GetWeight();
-				mStartTime  = p.GetStartTime();
-				mEndTime    = p.GetEndTime();
-			}
-
-			mWeight = Plus(mWeight, p.GetWeight());
-
+		void Add(const Path& pRef) {
+			//cerr << "OverlappingPathGroup::Add("<<startTime<<", "<<endTime<<", "<<weight<<") ["<<mStartTime<<", "<<mEndTime<<"]" << endl;
+			Path* p = new Path(pRef);
 			this->mContainer.push_back(p);
+
+			if (mpBestPath->GetWeight().Value() > p->GetWeight().Value()) {
+				mpBestPath  = p;
+				mStartTime  = p->GetStartTime();
+				mEndTime    = p->GetEndTime();
+			}
 		}
 
 		void Print(const std::string& word) const {
@@ -62,26 +59,30 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Path>::type
 				 << word << FIELD_SEPARATOR 
 				 << setprecision(10) 
 				 << fixed
-				 << -mWeight.Value() << FIELD_SEPARATOR
-				 << -mBestWeight.Value() << FIELD_SEPARATOR
+				 << -mpBestPath->GetWeight().Value() << FIELD_SEPARATOR
 				 << endl
 				 ;
-			int idx = 0;
-			for (typename Base::const_iterator i=this->mContainer.begin(); i!=this->mContainer.end(); i++, idx++) {
-				if ((*i).GetWeight() == mBestWeight) {
-					cout << "BEST";
+			if (msPrintAllPathsInGroup) {
+				int idx = 0;
+				for (typename Base::const_iterator i=this->mContainer.begin(); i!=this->mContainer.end(); i++, idx++) {
+					if (*i == mpBestPath) {
+						cout << "BEST";
+					}
+					cout << "  path["<<idx<<"] " << **i << endl;
+					cout << endl;
 				}
-				cout << "  path["<<idx<<"] " << *i << endl;
-				cout << endl;
 			}
 		}
+		static void PrintAllPathsInGroup(bool b) {msPrintAllPathsInGroup = b;}
 
 	protected:
 		static const char FIELD_SEPARATOR = ' ';
 		float mStartTime;
 		float mEndTime;
 		typename Path::Arc::Weight mWeight;
-		typename Path::Arc::Weight mBestWeight;
+		Path* mpBestPath;
+		static bool msPrintAllPathsInGroup;
 };
+template <class Path> bool OverlappingPathGroup<Path>::msPrintAllPathsInGroup = false;
 
 #endif

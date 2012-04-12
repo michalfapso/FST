@@ -99,6 +99,7 @@ class ForwardTraverser {
 						path_gen.GeneratePaths(arc.nextstate, n.GetStartTime(), &paths);
 						all_paths.Add(paths);
 						DBG("Generated paths:");
+						OverlappingPathGroup<Path>::PrintAllPathsInGroup(true);
 						paths.Print("_DETECTION_");
 						DBG("Generated paths end");
 					} else if (ilabel == "TERM_END") {
@@ -109,6 +110,7 @@ class ForwardTraverser {
 				}
 			}
 			DBG("Generated all_paths:");
+			OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
 			all_paths.Print("_DETECTION_");
 			DBG("Generated all_paths end");
 		}
