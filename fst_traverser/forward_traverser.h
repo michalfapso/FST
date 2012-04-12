@@ -69,6 +69,9 @@ class ForwardTraverser {
 			DBG("Traverse()");
 
 			OverlappingPathGroupList<Path> all_paths;
+			PathTerminatorTermEnd path_term(*mpSyms);
+			PathGeneratorForward<Path> path_gen(*mpFst, mNodes, path_term, PathGenerator<Path>::FINAL_NODE_IGNORE);
+
 			// Loop through states
 			for (StateIterator<Fst<Arc>> siter(*mpFst); !siter.Done(); siter.Next())
 			{
@@ -93,15 +96,14 @@ class ForwardTraverser {
 					if (ilabel == "TERM_START") {
 						DBG("TERM_START");
 						DBG(n);
-						PathTerminatorTermEnd path_term(*mpSyms);
-						PathGeneratorForward<Path> path_gen(*mpFst, mNodes, path_term, PathGenerator<Path>::FINAL_NODE_IGNORE);
 						OverlappingPathGroupList<Path> paths;
 						path_gen.GeneratePaths(arc.nextstate, n.GetStartTime(), &paths);
 						all_paths.Add(paths);
-						DBG("Generated paths:");
-						OverlappingPathGroup<Path>::PrintAllPathsInGroup(true);
-						paths.Print("_DETECTION_");
-						DBG("Generated paths end");
+						//DBG("Generated paths:");
+						//OverlappingPathGroup<Path>::PrintAllPathsInGroup(true);
+						//OverlappingPathGroup<Path>::PrintBestPathInGroup(false);
+						//paths.Print("_DETECTION_");
+						//DBG("Generated paths end");
 					} else if (ilabel == "TERM_END") {
 					}
 
@@ -111,6 +113,7 @@ class ForwardTraverser {
 			}
 			DBG("Generated all_paths:");
 			OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
+			OverlappingPathGroup<Path>::PrintBestPathInGroup(true);
 			all_paths.Print("_DETECTION_");
 			DBG("Generated all_paths end");
 		}

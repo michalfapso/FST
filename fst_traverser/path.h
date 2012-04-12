@@ -93,10 +93,8 @@ class Path : public Path_Base<TArc>::type
 						}
 					}
 				}
-				//if (end_time > -1) { return end_time; }
 			}
 			return end_time;
-			//throw std::runtime_error("ERROR: Path does not contain any time arc!");
 		}
 
 		static void SetSymbols(const fst::SymbolTable* syms) { mspSyms = syms; ParallelArcs<Arc>::SetSymbols(syms); }

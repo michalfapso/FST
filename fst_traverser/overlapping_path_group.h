@@ -62,6 +62,9 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Path>::type
 				 << -mpBestPath->GetWeight().Value() << FIELD_SEPARATOR
 				 << endl
 				 ;
+			if (msPrintBestPathInGroup) {
+				cout << "BestPath: " << *mpBestPath << endl;
+			}
 			if (msPrintAllPathsInGroup) {
 				int idx = 0;
 				for (typename Base::const_iterator i=this->mContainer.begin(); i!=this->mContainer.end(); i++, idx++) {
@@ -74,6 +77,7 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Path>::type
 			}
 		}
 		static void PrintAllPathsInGroup(bool b) {msPrintAllPathsInGroup = b;}
+		static void PrintBestPathInGroup(bool b) {msPrintBestPathInGroup = b;}
 
 	protected:
 		static const char FIELD_SEPARATOR = ' ';
@@ -82,7 +86,9 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Path>::type
 		typename Path::Arc::Weight mWeight;
 		Path* mpBestPath;
 		static bool msPrintAllPathsInGroup;
+		static bool msPrintBestPathInGroup;
 };
 template <class Path> bool OverlappingPathGroup<Path>::msPrintAllPathsInGroup = false;
+template <class Path> bool OverlappingPathGroup<Path>::msPrintBestPathInGroup = false;
 
 #endif

@@ -35,27 +35,29 @@ class PathGeneratorForward : public PathGenerator<Path>
 			DBG("vnbp["<<startStateId<<"]:"<<vnbp[startStateId]);
 			for (unsigned int state_id = startStateId; state_id < this->mNodes.size(); state_id++)
 			{
-				if (!vnbp[state_id].IsValidBestPathNode()) continue;
-				const Node& n = this->mNodes[state_id];
-				// Loop through n.GetParallelArcs()
-				for (typename Node::Nextnode2ParallelArcs::const_iterator i = n.GetParallelArcs().begin(); i != n.GetParallelArcs().end(); i++) 
+				if (vnbp[state_id].GetBestPath())
 				{
-					int nextstate = i->first;
-					const ParallelArcs<Arc>& pa = i->second;
+					const Node& n = this->mNodes[state_id];
+					// Loop through n.GetParallelArcs()
+					for (typename Node::Nextnode2ParallelArcs::const_iterator i = n.GetParallelArcs().begin(); i != n.GetParallelArcs().end(); i++) 
+					{
+						int nextstate = i->first;
+						const ParallelArcs<Arc>& pa = i->second;
 
-					bool include_arc = false;
-					bool path_end = mfPathTerminator(state_id, pa, &include_arc);
-					if (path_end) {
-						if (include_arc) {
-							Path p(vnbp[state_id].GetBestPath());
-							p.push_back(&pa);
-							pPaths->Add(p);
+						bool include_arc = false;
+						bool path_end = mfPathTerminator(state_id, pa, &include_arc);
+						if (path_end) {
+							if (include_arc) {
+								Path p(*vnbp[state_id].GetBestPath());
+								p.push_back(&pa);
+								pPaths->Add(p);
+							} else {
+								pPaths->Add(*vnbp[state_id].GetBestPath());
+							}
 						} else {
-							pPaths->Add(vnbp[state_id].GetBestPath());
+							vnbp[nextstate].ForwardBestPathFromNode(vnbp[state_id], &pa);
+							//DBG("ForwardBestPathFromNode() "<<state_id<<" -> "<<nextstate<<": "<<vnbp[nextstate]);
 						}
-					} else {
-						vnbp[nextstate].ForwardBestPathFromNode(vnbp[state_id], &pa);
-						//DBG("ForwardBestPathFromNode() "<<state_id<<" -> "<<nextstate<<": "<<vnbp[nextstate]);
 					}
 				}
 			}

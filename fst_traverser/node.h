@@ -160,36 +160,45 @@ class Node_BestPath : public NodeBase {
 		//typedef PathAvgWeight<Arc> Path;
 		//typedef PathMultWeight<Arc> Path;
 
-		Node_BestPath() : NodeBase(), mBestPath(INVALID_PATH_START_STATE_ID, INVALID_PATH_START_TIME) {}
+		Node_BestPath() : NodeBase(), mpBestPath(NULL) {}
+		~Node_BestPath() {
+			if (mpBestPath) delete mpBestPath;
+		}
 
-		inline const Path& GetBestPath() const {return mBestPath;}
-		inline const void SetBestPathStartStateId(int id) {mBestPath.SetStartStateId(id);}
-		inline const void SetBestPathStartTime(float t) {mBestPath.SetStartTime(t);}
-		inline const void SetBestPathWeight(Weight w) {mBestPath.SetWeight(w);}
+		inline const Path* GetBestPath() const {return mpBestPath;}
+		inline const void SetBestPathStartStateId(int id) {AllocateBestPath(); mpBestPath->SetStartStateId(id);}
+		inline const void SetBestPathStartTime(float t) {AllocateBestPath(); mpBestPath->SetStartTime(t);}
+		inline const void SetBestPathWeight(Weight w) {AllocateBestPath(); mpBestPath->SetWeight(w);}
 
 		bool IsValidBestPathNode() const {
-			return GetBestPath().GetStartStateId() != INVALID_PATH_START_STATE_ID;
+			//return GetBestPath().GetStartStateId() != INVALID_PATH_START_STATE_ID;
+			return GetBestPath();
 		}
+		void Reset() { delete mpBestPath; mpBestPath = NULL; }
 
 		void ForwardBestPathFromNode(const Node& nFrom, const ParallelArcs<Arc>* pa)
 		{
-			if (nFrom.IsValidBestPathNode()) {
-				const Weight w = nFrom.GetBestPath().GetWeightWithArc(*pa);
-				if (GetBestPath().empty() || w.Value() < GetBestPath().GetWeight().Value()) {
-					mBestPath = nFrom.GetBestPath();
-					mBestPath.push_back(pa);
+			if (nFrom.GetBestPath()) {
+				const Weight w = nFrom.GetBestPath()->GetWeightWithArc(*pa);
+				if (!GetBestPath() || w.Value() < GetBestPath()->GetWeight().Value()) {
+					AllocateBestPath();
+					*mpBestPath = *nFrom.GetBestPath();
+					mpBestPath->push_back(pa);
 				}
 			}
 		}
 
 		friend std::ostream& operator<<(std::ostream& oss, const Node& n) {
 			oss << (NodeBase)n;
-			oss << "BestPath:" << n.mBestPath;
+			oss << "BestPath:";
+			if (n.mpBestPath) { oss << *n.mpBestPath; } else { oss << "NULL"; }
 			return oss;
 		}
 
 	protected:
-		Path mBestPath;
+		void AllocateBestPath() { if (!mpBestPath) {mpBestPath = new Path(INVALID_PATH_START_STATE_ID, INVALID_PATH_START_TIME);} }
+
+		Path* mpBestPath;
 };
 template <class Path, class NodeBase> const int Node_BestPath<Path, NodeBase>::INVALID_PATH_START_STATE_ID = -1;
 template <class Path, class NodeBase> const float Node_BestPath<Path, NodeBase>::INVALID_PATH_START_TIME = -1;
