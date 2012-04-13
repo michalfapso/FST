@@ -3,7 +3,7 @@
 
 #include <sstream>
 
-float string2float(string s) {
+float string2float(std::string s) {
 	float f = 0;
 	std::istringstream in(s);
 	in >> f;
