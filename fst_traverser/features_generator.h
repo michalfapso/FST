@@ -29,6 +29,7 @@ class FeaturesGenerator_Path
 			OnlineAverage<float> parallel_arcs_length_avg;
 
 			float pa_start_time = path.GetStartTime();
+			float weight_nonepsilons_avg_weighted_by_arc_length = 0;
 			foreach(const PA* pa, path) {
 				assert(pa);
 				bool epsilon_found = false;
@@ -46,15 +47,19 @@ class FeaturesGenerator_Path
 					phonemes_per_parallel_arc_avg.Add(pa->size());
 					assert(pa->GetEndTime() >= 0);
 					float pa_length = pa->GetEndTime() - pa_start_time;
-					pa_start_time = pa->GetEndTime();
 					parallel_arcs_length_min.Add(pa_length);
 					parallel_arcs_length_max.Add(pa_length);
 					parallel_arcs_length_avg.Add(pa_length);
+					weight_nonepsilons_avg_weighted_by_arc_length += exp(-pa->GetWeight().Value()) * pa_length;
+					pa_start_time = pa->GetEndTime();
+					//DBG("pa: "<<*pa<<" length="<<pa_length<<" weight="<<pa->GetWeight().Value());
 				}
 			}
-			unsigned int phoneme_parallel_arcs_count = path.size() - epsilons_count;
 			assert(path.GetEndTime() >= 0);
 			float time_length = path.GetEndTime() - path.GetStartTime();
+			weight_nonepsilons_avg_weighted_by_arc_length /= time_length;
+			weight_nonepsilons_avg_weighted_by_arc_length = -log(weight_nonepsilons_avg_weighted_by_arc_length);
+			unsigned int phoneme_parallel_arcs_count = path.size() - epsilons_count;
 
 			oss 
 				// Standard MLF fields
@@ -75,6 +80,7 @@ class FeaturesGenerator_Path
 				// Weight
 				<< weight_epsilons_avg.GetValue() << " "
 				<< weight_nonepsilons_avg.GetValue() << " "
+				<< weight_nonepsilons_avg_weighted_by_arc_length << " "
 				;
 		}
 };
