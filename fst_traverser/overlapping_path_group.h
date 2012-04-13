@@ -37,6 +37,8 @@ class OverlappingPathGroup : public OverlappingPathGroup_Base<Path>::type
 			return endTime > mStartTime && startTime < mEndTime;
 		}
 
+		inline const Path* GetBestPath() const {return mpBestPath;}
+
 		void Add(const Path& pRef) {
 			//cerr << "OverlappingPathGroup::Add("<<startTime<<", "<<endTime<<", "<<weight<<") ["<<mStartTime<<", "<<mEndTime<<"]" << endl;
 			Path* p = new Path(pRef);

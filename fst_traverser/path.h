@@ -10,6 +10,7 @@
 #include "string2float.h"
 #include "parallel_arcs.h"
 #include "print_type.h"
+#include "foreach.h"
 
 template <class TArc>
 struct Path_Base {
@@ -81,33 +82,26 @@ class Path : public Path_Base<TArc>::type
 		{
 			assert(mspSyms);
 			float end_time = -1;
-			for (typename Base::Container::const_reverse_iterator i=this->mContainer.rbegin(); i!=this->mContainer.rend(); i++) {
-				const ParallelArcs<Arc>& pa = **i;
-				for (typename ParallelArcs<Arc>::const_iterator i_arc = pa.begin(); i_arc != pa.end(); i_arc++)
-				{
-					const std::string& olabel = mspSyms->Find((*i_arc)->olabel);
-					if (olabel.substr(0,2) == "t=") {
-						float t = string2float(olabel.substr(2));
-						if (end_time < t) {
-							end_time = t;
-						}
-					}
-				}
+			reverse_foreach(const ParallelArcs<Arc>* pa, *this) {
+				assert(pa);
+				end_time = pa->GetEndTime();
+				if (end_time >= 0) { break; }
 			}
 			return end_time;
 		}
 
 		static void SetSymbols(const fst::SymbolTable* syms) { mspSyms = syms; ParallelArcs<Arc>::SetSymbols(syms); }
 		static void SetPrintType(PrintType pt) { msPrintType = pt; ParallelArcs<Arc>::SetPrintType(pt); }
+		static PrintType GetPrintType() { return msPrintType; }
 
 		//--------------------------------------------------
 		// PRINTING
 		//--------------------------------------------------
 		std::ostream& PrintNodesOnly(std::ostream& oss) const {
 			string separator = "";
-			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
-				const ParallelArcs<Arc>& pa = **i;
-				oss << separator << pa;
+			foreach(const ParallelArcs<Arc>* pa, *this) {
+				assert(pa);
+				oss << separator << *pa;
 				separator = " ";
 			}
 			return oss;
@@ -118,9 +112,9 @@ class Path : public Path_Base<TArc>::type
 			oss << std::setprecision(4) << "w:" << GetWeight() << " ";
 			oss << "length:" << this->size() << " ";
 			oss << mStartStateId;
-			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
-				const ParallelArcs<Arc>& pa = **i;
-				oss << " -- " << pa;
+			foreach(const ParallelArcs<Arc>* pa, *this) {
+				assert(pa);
+				oss << " -- " << *pa;
 			}
 			oss << endl;
 
@@ -133,11 +127,10 @@ class Path : public Path_Base<TArc>::type
 		}
 
 		std::ostream& PrintPhonemesOnly(std::ostream& oss) const {
-			oss << "phonemes: ";
-			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
-				const ParallelArcs<Arc>& pa = **i;
-				if (pa.ContainsPhoneme(mspSyms)) {
-					oss << pa << " ";
+			foreach(const ParallelArcs<Arc>* pa, *this) {
+				assert(pa);
+				if (!pa->IsEpsilon()) {
+					oss << *pa << " ";
 				}
 			}
 			return oss;

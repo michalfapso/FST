@@ -6,6 +6,8 @@
 #include <fst/fst.h>
 #include "container_interface.h"
 #include "print_type.h"
+#include "foreach.h"
+#include "exception.h"
 
 template <class Arc>
 struct ParallelArcs_Base {
@@ -27,14 +29,38 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 
 		inline typename Arc::Weight GetWeight() const { return mWeight; }
 		inline int GetNextState() const { return this->empty() ? -1 : (*this->begin())->nextstate; }
-		bool ContainsPhoneme(const fst::SymbolTable* syms) const {
-			if (!syms) { return false; }
+		bool IsEpsilon() const {
 			bool res = false;
-			for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
-				const Arc& a = **i;
-				res |= is_phoneme(syms->Find(a.ilabel));
+			foreach(const Arc* a, *this) {
+				res |= a->ilabel == 0;
+			}
+			if (res && this->size() > 1) {
+				THROW("ERROR: ParallelArcs::IsEpsilon(): epsilon should not have parallel arcs! ("<<*this<<")");
 			}
 			return res;
+		}
+		bool ContainsPhoneme() const {
+			if (!mspSyms) { THROW("ERROR: ParallelArcs::ContainsPhoneme(): symbols are not set!"); }
+			bool res = false;
+			foreach(const Arc* a, *this) {
+				res |= is_phoneme(mspSyms->Find(a->ilabel));
+			}
+			return res;
+		}
+		float GetEndTime() const {
+			if (!mspSyms) { THROW("ERROR: ParallelArcs::GetEndTime(): symbols are not set!"); }
+			float end_time = 0;
+			bool time_arcs_found = false;
+			foreach(const Arc* a, *this) {
+				assert(a);
+				const std::string& olabel = mspSyms->Find(a->olabel);
+				if (olabel.substr(0,2) == "t=") {
+					time_arcs_found = true;
+					float t = string2float(olabel.substr(2));
+					end_time += t * ( exp(-a->weight.Value()) / exp(-GetWeight().Value()) ); // Time is weighted by the normalized probability of the arc 
+				}
+			}
+			return time_arcs_found ? end_time : -1;
 		}
 
 		//--------------------------------------------------
@@ -54,16 +80,16 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			} else {
 				oss << "[";
 				string separator = "";
-				for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
+				foreach(const Arc* a, *this) {
 					oss << separator;
-					const Arc& a = **i;
-					if (mspSyms) {oss << mspSyms->Find(a.ilabel);} else {oss << a.ilabel;}
+					if (mspSyms) {oss << mspSyms->Find(a->ilabel);} else {oss << a->ilabel;}
 					oss << ":";
-					if (mspSyms) {oss << mspSyms->Find(a.olabel);} else {oss << a.olabel;}
-					oss << "/" << a.weight;
+					if (mspSyms) {oss << mspSyms->Find(a->olabel);} else {oss << a->olabel;}
+					oss << "/" << a->weight;
 					separator = " ";
 				}
 				oss << "] -> " << (*this->begin())->nextstate;
+				oss << " endTime=" << GetEndTime();
 				return oss;
 			}
 		}
@@ -74,10 +100,9 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			} else {
 				oss << "[";
 				string separator = "";
-				for (typename Base::const_iterator i=this->begin(); i!=this->end(); i++) {
+				foreach(const Arc* a, *this) {
 					oss << separator;
-					const Arc& a = **i;
-					if (mspSyms) {oss << mspSyms->Find(a.ilabel);} else {oss << a.ilabel;}
+					if (mspSyms) {oss << mspSyms->Find(a->ilabel);} else {oss << a->ilabel;}
 					separator = " ";
 				}
 				oss << "] ";
