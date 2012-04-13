@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
 	typedef LogArc Arc;
 
-	Fst<Arc>* fst = Fst<Arc>::Read(pfst_filename);
+	Fst<Arc>* fst = Fst<Arc>::Read(strcmp(pfst_filename, "-") == 0 ? "" : pfst_filename);
 	if (fst->Start() < 0) {
 		cerr << "Warning: FST is empty!" << endl;
 	} else {
