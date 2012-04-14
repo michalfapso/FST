@@ -65,7 +65,7 @@ class ForwardTraverser {
 	
 		void Traverse(OverlappingPathGroupList<Path>* pPathsOut)
 		{
-			DBG("Traverse()");
+			//DBG("Traverse()");
 
 			PathTerminatorTermEnd path_term(*mpSyms);
 			PathGeneratorForward<Path> path_gen(*mpFst, mNodes, path_term, PathGenerator<Path>::FINAL_NODE_IGNORE);

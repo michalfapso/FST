@@ -91,6 +91,7 @@ class Path : public Path_Base<TArc>::type
 		}
 
 		static void SetSymbols(const fst::SymbolTable* syms) { mspSyms = syms; ParallelArcs<Arc>::SetSymbols(syms); }
+		static const fst::SymbolTable* GetSymbols() { return mspSyms; }
 		static void SetPrintType(PrintType pt) { msPrintType = pt; ParallelArcs<Arc>::SetPrintType(pt); }
 		static PrintType GetPrintType() { return msPrintType; }
 

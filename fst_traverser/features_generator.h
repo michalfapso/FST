@@ -90,6 +90,7 @@ class FeaturesGenerator
 {
 	public:
 		typedef TPath Path;
+		typedef typename Path::Arc Arc;
 		FeaturesGenerator(const std::string& term, const std::string& outputFilename) : mTerm(term)
 		{
 			mOss.open("features.txt");
@@ -112,7 +113,22 @@ class FeaturesGenerator
 		void Generate(const Path* p) {
 			assert(p);
 			FeaturesGenerator_Path<Path>::PrintFeatures(*p, mTerm, mOss);
-			mOss << "| " << *p;
+			//mOss << "| " << *p;
+			mOss << "|";
+			float pa_start_time = p->GetStartTime();
+			foreach(const ParallelArcs<Arc>* pa, *p) { assert(pa);
+				if (!pa->IsEpsilon()) {
+					mOss << " [";
+					std::string sep = "";
+					foreach(const Arc* a, *pa) { assert(a);
+						mOss << sep << Path::GetSymbols()->Find(a->ilabel);
+						sep = " ";
+					}
+					float pa_length = pa->GetEndTime() - pa_start_time;
+					pa_start_time = pa->GetEndTime();
+					mOss << "]:" << seconds_to_frames(pa_length) << ":" << std::setprecision(2) << exp(-pa->GetWeight().Value());
+				}
+			}
 			mOss << endl;
 		}
 	protected:

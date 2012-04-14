@@ -101,11 +101,11 @@ int main(int argc, char **argv)
 		ForwardTraverser<Path> trav(fst, syms);
 		trav.Traverse(&paths);
 
-		DBG("Generated paths:");
-		OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
-		OverlappingPathGroup<Path>::PrintBestPathInGroup(true);
-		paths.Print("_DETECTION_");
-		DBG("Generated paths end");
+		//DBG("Generated paths:");
+		//OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
+		//OverlappingPathGroup<Path>::PrintBestPathInGroup(true);
+		//paths.Print("_DETECTION_");
+		//DBG("Generated paths end");
 
 
 		PrintType pt = Path::GetPrintType();
