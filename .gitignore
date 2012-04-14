@@ -1,3 +1,4 @@
 .deps
 .objs
 *.swp
+Makefile.paths
