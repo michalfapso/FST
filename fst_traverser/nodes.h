@@ -22,12 +22,13 @@ class Nodes : public IndexedContainerInterface< std::vector< typename NodesEleme
 	public:
 		typedef typename NodesElementType<Arc>::type Node;
 
-		Nodes(const fst::Fst<Arc>& fst) {
+		Nodes(const fst::Fst<Arc>& fst, const fst::SymbolTable* pSyms) {
 			size_t nstates = 0;
 			for (fst::StateIterator<fst::Fst<Arc>> siter(fst); !siter.Done(); siter.Next()) {
 				++nstates;
 			}
 			this->mContainer.resize(nstates);
+			ParallelArcs<Arc>::SetSymbols(pSyms);
 			InitializeParallelArcs(fst);
 			(*this)[0].InitStartNode();
 		}

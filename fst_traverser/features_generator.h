@@ -66,7 +66,7 @@ class FeaturesGenerator_Path
 				<< SecondsToMlfTime(path.GetStartTime()) << " "
 				<< SecondsToMlfTime(path.GetEndTime()) << " "
 				<< term << " "
-				<< path.GetWeight() << " "
+				<< (-path.GetWeight().Value()) << " "
 				// Arcs count
 				<< epsilons_count << " "
 				<< phoneme_parallel_arcs_count << " "
@@ -93,7 +93,10 @@ class FeaturesGenerator
 		typedef typename Path::Arc Arc;
 		FeaturesGenerator(const std::string& term, const std::string& outputFilename) : mTerm(term)
 		{
-			mOss.open("features.txt");
+			mOss.open(outputFilename);
+			if (!mOss.good()) {
+				THROW("ERROR: FeaturesGenerator: Can not open file "<<outputFilename<<" for writing!");
+			}
 		}
 		~FeaturesGenerator() {
 			mOss.close();

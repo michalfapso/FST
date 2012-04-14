@@ -30,7 +30,7 @@ class Path : public Path_Base<TArc>::type
 		Weight mWeight;
 		float mStartTime;
 		float mEndTime;
-		unsigned int mPhonemesCount;
+		unsigned int mNonepsilonParallelArcsCount;
 
 		static const fst::SymbolTable* mspSyms;
 		static PrintType msPrintType;
@@ -41,54 +41,52 @@ class Path : public Path_Base<TArc>::type
 			mWeight(Weight::One()),
 			mStartTime(startTime),
 			mEndTime(NO_TIME),
-			mPhonemesCount(0)
+			mNonepsilonParallelArcsCount(0)
 		{}
-
-		Path(const Path& p) {
-			this->mStartStateId  = p.mStartStateId;
-			this->mWeight        = p.mWeight;
-			this->mStartTime     = p.mStartTime;
-			this->mEndTime       = p.mEndTime;
-			this->mPhonemesCount = p.mPhonemesCount;
-			this->mContainer     = p.mContainer;
-		}
 
 		virtual Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const = 0;
 		virtual Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const = 0;
 
 		void push_back(const ParallelArcs<Arc>* pa) { 
+			assert(pa);
 			this->mWeight = GetWeightWithArc(*pa);
+			if (!pa->IsEpsilon()) {
+				this->mNonepsilonParallelArcsCount ++;
+				this->mEndTime = pa->GetEndTime();
+			}
 			this->mContainer.push_back(pa); 
 		}
 		void pop_back() {
-			this->mWeight = GetWeightWithoutArc(*this->mContainer.back());
+			const ParallelArcs<Arc>* pa = this->mContainer.back();
+			assert(pa);
+			this->mWeight = GetWeightWithoutArc(*pa);
 			this->mContainer.pop_back();
+			if (!pa->IsEpsilon()) {
+				this->mNonepsilonParallelArcsCount --;
+				this->mEndTime = RecomputeEndTimeByReverseTraversingPath();
+			}
 		}
 
 		static bool compare(const Path<Arc> *p1, const Path<Arc> *p2) {
 			return p1->GetWeight().Value() < p2->GetWeight().Value();
 		}
 
+		bool IsValid() const {
+			return mNonepsilonParallelArcsCount >= 2 
+				&& GetStartTime() > 0
+				&& GetEndTime() > 0
+				&& GetStartTime() != GetEndTime();
+		}
+
 		inline void   SetStartStateId(int id) { mStartStateId = id; }
 		inline void   SetStartTime(float t)   { mStartTime = t; }
-		inline void   SetEndTime(float t)     { mEndTime = t; }
+//		inline void   SetEndTime(float t)     { mEndTime = t; }
 		inline void   SetWeight(Weight w)     { mWeight = w; }
 
 		inline Weight GetWeight()       const { return mWeight; }
 		inline int    GetStartStateId() const { return mStartStateId; }
 		inline float  GetStartTime()    const { return mStartTime; }
-//		inline float  GetEndTime()      const { return mEndTime; }
-		float GetEndTime() const 
-		{
-			assert(mspSyms);
-			float end_time = -1;
-			reverse_foreach(const ParallelArcs<Arc>* pa, *this) {
-				assert(pa);
-				end_time = pa->GetEndTime();
-				if (end_time >= 0) { break; }
-			}
-			return end_time;
-		}
+		inline float  GetEndTime()      const { return mEndTime; }
 
 		static void SetSymbols(const fst::SymbolTable* syms) { mspSyms = syms; ParallelArcs<Arc>::SetSymbols(syms); }
 		static const fst::SymbolTable* GetSymbols() { return mspSyms; }
@@ -112,10 +110,12 @@ class Path : public Path_Base<TArc>::type
 			oss << std::setprecision(2) << "t[" << GetStartTime() << ".." << GetEndTime() << "] ";
 			oss << std::setprecision(4) << "w:" << GetWeight() << " ";
 			oss << "length:" << this->size() << " ";
+			oss << "mNonepsilonParallelArcsCount:" << mNonepsilonParallelArcsCount << " ";
 			oss << mStartStateId;
 			foreach(const ParallelArcs<Arc>* pa, *this) {
 				assert(pa);
 				oss << " -- " << *pa;
+				oss << "(isEpsilon:" << pa->IsEpsilon() << ")";
 			}
 			oss << endl;
 
@@ -146,6 +146,16 @@ class Path : public Path_Base<TArc>::type
 			}
 		}
 		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	protected:
+		float RecomputeEndTimeByReverseTraversingPath() const {
+			float end_time = -1;
+			reverse_foreach(const ParallelArcs<Arc>* pa, *this) {
+				assert(pa);
+				end_time = pa->GetEndTime();
+				if (end_time >= 0) { break; }
+			}
+			return end_time;
+		}
 };
 
 template <class TArc> const fst::SymbolTable* Path<TArc>::mspSyms = NULL;

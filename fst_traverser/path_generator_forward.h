@@ -46,12 +46,15 @@ class PathGeneratorForward : public PathGenerator<Path>
 						bool include_arc = false;
 						bool path_end = mfPathTerminator(state_id, pa, &include_arc);
 						if (path_end) {
-							if (include_arc) {
-								Path p(*vnbp[state_id].GetBestPath());
-								p.push_back(&pa);
-								pPaths->Add(p);
-							} else {
-								pPaths->Add(*vnbp[state_id].GetBestPath());
+							const Path* path_to_add = vnbp[state_id].GetBestPath();
+							if (path_to_add && path_to_add->IsValid()) {
+								if (include_arc) {
+									Path p(*path_to_add);
+									p.push_back(&pa);
+									pPaths->Add(p);
+								} else {
+									pPaths->Add(*path_to_add);
+								}
 							}
 						} else {
 							vnbp[nextstate].ForwardBestPathFromNode(vnbp[state_id], &pa);

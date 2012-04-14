@@ -53,7 +53,7 @@ class ForwardTraverser {
 		ForwardTraverser(const Fst<Arc>* pFst, const SymbolTable* pSyms) :  
 			mpFst(pFst),
 			mpSyms(pSyms),
-			mNodes(*pFst),
+			mNodes(*pFst, pSyms),
 			mBackwardArcs(*pFst)
 		{ 
 			if (!FstProperties::IsTopologicallySorted(*mpFst)) {
@@ -94,6 +94,7 @@ class ForwardTraverser {
 					if (ilabel == "TERM_START") {
 						//DBG("TERM_START");
 						//DBG(n);
+						//if (arc.nextstate != 83715) continue;
 						OverlappingPathGroupList<Path> paths;
 						path_gen.GeneratePaths(arc.nextstate, n.GetStartTime(), &paths);
 						pPathsOut->Add(paths);

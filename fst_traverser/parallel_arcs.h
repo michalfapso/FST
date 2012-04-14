@@ -8,6 +8,7 @@
 #include "print_type.h"
 #include "foreach.h"
 #include "exception.h"
+#include "fst_arc_printer.h"
 
 template <class Arc>
 struct ParallelArcs_Base {
@@ -19,49 +20,34 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 	protected:
 		typedef typename ParallelArcs_Base<Arc>::type Base;
 	public:
-		ParallelArcs() : mWeight(Arc::Weight::Zero()) {}
+		ParallelArcs() : mWeight(Arc::Weight::Zero()), mIsEpsilon(false) {}
 
 		void Add(const Arc* arc) {
-			assert(this->empty() || (*this->begin())->nextstate == arc->nextstate);
+			assert(arc);
+			if (!this->empty()) {
+				assert((*this->begin())->nextstate == arc->nextstate);
+				if (!mIsEpsilon && arc->ilabel == 0) {
+					THROW("ERROR: ParallelArcs::Add(): epsilon arcs should not have parallel arcs! (pa:"<<*this<<" new_arc:"<<*arc<<")");
+				}
+			}
+			mIsEpsilon |= arc->ilabel == 0;
 			this->mContainer.push_back(arc);
 			mWeight = Plus(mWeight, arc->weight);
+			mEndTime = RecomputeEndTime();
 		}
 
 		inline typename Arc::Weight GetWeight() const { return mWeight; }
 		inline int GetNextState() const { return this->empty() ? -1 : (*this->begin())->nextstate; }
-		bool IsEpsilon() const {
-			bool res = false;
-			foreach(const Arc* a, *this) {
-				res |= a->ilabel == 0;
-			}
-			if (res && this->size() > 1) {
-				THROW("ERROR: ParallelArcs::IsEpsilon(): epsilon should not have parallel arcs! ("<<*this<<")");
-			}
-			return res;
-		}
-		bool ContainsPhoneme() const {
-			if (!mspSyms) { THROW("ERROR: ParallelArcs::ContainsPhoneme(): symbols are not set!"); }
-			bool res = false;
-			foreach(const Arc* a, *this) {
-				res |= is_phoneme(mspSyms->Find(a->ilabel));
-			}
-			return res;
-		}
-		float GetEndTime() const {
-			if (!mspSyms) { THROW("ERROR: ParallelArcs::GetEndTime(): symbols are not set!"); }
-			float end_time = 0;
-			bool time_arcs_found = false;
-			foreach(const Arc* a, *this) {
-				assert(a);
-				const std::string& olabel = mspSyms->Find(a->olabel);
-				if (olabel.substr(0,2) == "t=") {
-					time_arcs_found = true;
-					float t = string2float(olabel.substr(2));
-					end_time += t * ( exp(-a->weight.Value()) / exp(-GetWeight().Value()) ); // Time is weighted by the normalized probability of the arc 
-				}
-			}
-			return time_arcs_found ? end_time : -1;
-		}
+		bool IsEpsilon() const {return mIsEpsilon;}
+		float GetEndTime() const {return mEndTime;}
+//		bool ContainsPhoneme() const {
+//			if (!mspSyms) { THROW("ERROR: ParallelArcs::ContainsPhoneme(): symbols are not set!"); }
+//			bool res = false;
+//			foreach(const Arc* a, *this) {
+//				res |= is_phoneme(mspSyms->Find(a->ilabel));
+//			}
+//			return res;
+//		}
 
 		//--------------------------------------------------
 		// PRINTING
@@ -125,7 +111,25 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 		static PrintType GetPrintType() { return msPrintType; }
 
 	protected:
+		float RecomputeEndTime() const {
+			if (!mspSyms) { THROW("ERROR: ParallelArcs::RecomputeEndTime(): symbols are not set!"); }
+			float end_time = 0;
+			bool time_arcs_found = false;
+			foreach(const Arc* a, *this) {
+				assert(a);
+				const std::string& olabel = mspSyms->Find(a->olabel);
+				if (olabel.substr(0,2) == "t=") {
+					time_arcs_found = true;
+					float t = string2float(olabel.substr(2));
+					end_time += t * ( exp(-a->weight.Value()) / exp(-GetWeight().Value()) ); // Time is weighted by the normalized probability of the arc 
+				}
+			}
+			return time_arcs_found ? end_time : -1;
+		}
+
 		typename Arc::Weight mWeight;
+		bool mIsEpsilon;
+		float mEndTime;
 		static const fst::SymbolTable* mspSyms;
 		static PrintType msPrintType;
 };
