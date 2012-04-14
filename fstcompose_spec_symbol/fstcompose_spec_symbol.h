@@ -117,11 +117,13 @@ void FstComposeSpecSymbolMain(
 //		fstout = ComposeFst<Arc>(*ofst1, *ofst2, opts);
 //	}
 
-	fstout.Write((string)pFstOutFilename + ".notconnected");
+//	if (strcmp(pFstOutFilename, "-") != 0) {
+//		fstout.Write((string)pFstOutFilename + ".notconnected");
+//	}
 	Connect(&fstout);
 	fstout.SetInputSymbols(NULL);
 	fstout.SetOutputSymbols(NULL);
-	fstout.Write(pFstOutFilename ? pFstOutFilename : "");
+	fstout.Write(strcmp(pFstOutFilename, "-") == 0 ? "" : pFstOutFilename);
 }
 
 #endif

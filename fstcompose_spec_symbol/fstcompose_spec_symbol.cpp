@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 		i++;
 	}
 
-	if (!pfstin1_filename || !pfstin2_filename || spec_symbol_type == UNSET || spec_symbol == kNoLabel) {
+	if (!pfstin1_filename || !pfstin2_filename || spec_symbol_type == UNSET || spec_symbol == kNoLabel || !pfstout_filename) {
 		cerr << "ERROR: both input FSTs, --spec-symbol, --spec-symbol-type have to be defined" << endl;
 		help(argv[0]);
 		return 1;
