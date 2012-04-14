@@ -1,6 +1,6 @@
 #CXX = clang++ -v
 CXX = g++
-CXXFLAGS = -O0 -g -Wall -std=c++0x -I../include
+CXXFLAGS = -g -Wall -std=c++0x -I../include
 LDFLAGS = -lprofiler -lfst -ldl
 #LDFLAGS = -lprofiler -ltcmalloc -lfst -ldl 
 
@@ -13,8 +13,11 @@ OBJFILES:=$(patsubst %.cpp,.objs/%.o,$(SOURCES))
 
 .PHONY: clean libmlf all
 
+all : CXXFLAGS += -O0
 all : $(EXEC)
-#all : $(EXEC)
+
+dist : CXXFLAGS += -O3
+dist : $(EXEC)
 
 $(EXEC) : $(OBJFILES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS)
