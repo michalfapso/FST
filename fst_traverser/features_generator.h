@@ -10,6 +10,9 @@
 #include "min_max.h"
 #include "seconds_to_mlf_time.h"
 
+#include "mlf.h"
+#include "hypotheses.h"
+
 template <class TPath>
 class FeaturesGenerator_Path
 {
@@ -91,7 +94,7 @@ class FeaturesGenerator
 	public:
 		typedef TPath Path;
 		typedef typename Path::Arc Arc;
-		FeaturesGenerator(const std::string& term, const std::string& outputFilename) : mTerm(term)
+		FeaturesGenerator(const std::string& term, const std::string& outputFilename, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef) : mTerm(term), mRecsRef(recsRef)
 		{
 			mOss.open(outputFilename);
 			if (!mOss.good()) {
@@ -115,27 +118,45 @@ class FeaturesGenerator
 		}
 		void Generate(const Path* p) {
 			assert(p);
+			PrintReferenceInfo(*p, mOss);
 			FeaturesGenerator_Path<Path>::PrintFeatures(*p, mTerm, mOss);
 			//mOss << "| " << *p;
-			mOss << "|";
+			mOss << " ";
+			// Various path info:
 			float pa_start_time = p->GetStartTime();
+			std::string pa_separator = "";
 			foreach(const ParallelArcs<Arc>* pa, *p) { assert(pa);
 				if (!pa->IsEpsilon()) {
-					mOss << " [";
-					std::string sep = "";
+					mOss << pa_separator << "[";
+					std::string a_separator = "";
 					foreach(const Arc* a, *pa) { assert(a);
-						mOss << sep << Path::GetSymbols()->Find(a->ilabel);
-						sep = " ";
+						mOss << a_separator << Path::GetSymbols()->Find(a->ilabel);
+						a_separator = "+";
 					}
 					float pa_length = pa->GetEndTime() - pa_start_time;
 					pa_start_time = pa->GetEndTime();
 					mOss << "]:" << seconds_to_frames(pa_length) << ":" << std::setprecision(2) << exp(-pa->GetWeight().Value());
+					pa_separator = "_";
 				}
 			}
 			mOss << endl;
 		}
 	protected:
+		void PrintReferenceInfo(const Path& p, std::ostream& oss) {
+			//float best_overlapping_ratio = 0;
+			float p_start_frame = seconds_to_frames(p.GetStartTime());
+			float p_end_frame = seconds_to_frames(p.GetEndTime());
+			foreach(const ReferenceMlfRecord* ref_rec, mRecsRef) {
+				// if they overlap
+				if (p_start_frame < ref_rec->GetEndTime() && p_end_frame > ref_rec->GetStartTime()) {
+					oss << "1 ";
+					return;
+				}
+			}
+			oss << "0 ";
+		}
 		const std::string mTerm;
+		const mlf::MlfRecords<ReferenceMlfRecord>& mRecsRef;
 		std::ofstream mOss;
 };
 #endif

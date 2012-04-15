@@ -8,6 +8,9 @@
 #include "forward_traverser.h"
 #include "features_generator.h"
 
+#include "mlf.h"
+#include "hypotheses.h"
+
 using namespace std;
 using namespace fst;
 
@@ -36,6 +39,8 @@ int main(int argc, char **argv)
 	char * psyms_filename = 0;
 	char * pterm = 0;
 	char * pfeatures_out = 0;
+	char * preference_mlf = 0;
+	char * putterance_filename = 0;
 //	OverlappedScoreType::Enum overlapped_score_method = OverlappedScoreType::logadd;
 
 	// PARSE COMMAND LINE ARGUMENTS
@@ -58,6 +63,14 @@ int main(int argc, char **argv)
 			i++;
 			pfeatures_out = argv[i];
 		}
+		else if (strcmp(argv[i], "--reference-mlf") == 0) {
+			i++;
+			preference_mlf = argv[i];
+		}
+		else if (strcmp(argv[i], "--utterance-filename") == 0) {
+			i++;
+			putterance_filename = argv[i];
+		}
 		else if (strcmp(argv[i], "--help") == 0) {
 			help(argv[0]);
 			return 0;
@@ -73,12 +86,27 @@ int main(int argc, char **argv)
 		i++;
 	}
 
-	// LOAD SYMBOL TABLES
-	if (!psyms_filename || !pterm || !pfst_filename || !pfeatures_out) {
+	if (!psyms_filename || !pterm || !pfst_filename || !pfeatures_out || !preference_mlf || !putterance_filename) {
 		cerr << "ERROR: missing arguments." << endl;
 		help(argv[0]);
 		return 1;
 	}
+
+	mlf::Mlf<ReferenceMlfRecord>             mlf_ref(preference_mlf);
+	mlf::MlfRecords<ReferenceMlfRecord>*     recs_ref_all_terms = mlf_ref.GetFile(putterance_filename);
+	mlf::MlfRecords<ReferenceMlfRecord>      recs_ref;
+	if (!recs_ref_all_terms) {
+		THROW("ERROR: File '"<<putterance_filename<<"' was not found in reference MLF '"<<preference_mlf<<"'");
+	}
+	// Keep only the given term in reference records
+	foreach(ReferenceMlfRecord* rec, *recs_ref_all_terms) {
+		assert(rec);
+		if (rec->GetWord() == (string)pterm) {
+			recs_ref.AddRecord(rec);
+		}
+	}
+
+
 	SymbolTable* syms = NULL;
 	syms = SymbolTable::ReadText(psyms_filename);
 
@@ -111,7 +139,7 @@ int main(int argc, char **argv)
 		PrintType pt = Path::GetPrintType();
 		Path::SetPrintType(PRINT_PHONEMES_ONLY);
 		{
-			FeaturesGenerator<Path> features(pterm, pfeatures_out);
+			FeaturesGenerator<Path> features(pterm, pfeatures_out, recs_ref);
 			features.Generate(paths);
 		}
 		Path::SetPrintType(pt);
