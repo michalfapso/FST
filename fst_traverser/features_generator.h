@@ -88,7 +88,7 @@ class FeaturesGenerator_Path
 				<< weight_epsilons_avg.GetValue() << " "
 				<< weight_nonepsilons_avg.GetValue() << " "
 				<< weight_nonepsilons_avg_weighted_by_arc_length << " "
-				<< weight_avg.Value() << " "
+				<< weight_avg.GetValue() << " "
 				<< weight_multiplied.Value() << " "
 				;
 		}

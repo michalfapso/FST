@@ -11,6 +11,7 @@
 #include "parallel_arcs.h"
 #include "print_type.h"
 #include "foreach.h"
+#include "online_average.h"
 
 template <class TArc>
 struct Path_Base {
@@ -171,12 +172,14 @@ class PathAvgWeight : public Path<TArc>
 		PathAvgWeight(int startStateId, float startTime) : Path<Arc>(startStateId, startTime) {}
 
 		Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const {
-			int c = this->size();
-			return (this->mWeight.Value() * c + pa.GetWeight().Value()) / (c+1);
+			return OnlineAverage<float>::WithValue(this->mWeight.Value(), this->size(), pa.GetWeight().Value());
+			//int c = this->size();
+			//return (this->mWeight.Value() * c + pa.GetWeight().Value()) / (c+1);
 		}
 		Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const {
-			int c = this->size();
-			return (this->mWeight.Value() * c - pa.GetWeight().Value()) / (c-1);
+			return OnlineAverage<float>::WithoutValue(this->mWeight.Value(), this->size(), pa.GetWeight().Value());
+			//int c = this->size();
+			//return (this->mWeight.Value() * c - pa.GetWeight().Value()) / (c-1);
 		}
 };
 
