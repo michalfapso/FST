@@ -27,6 +27,8 @@ class FeaturesGenerator_Path
 			OnlineAverage<float> phonemes_per_parallel_arc_avg;
 			OnlineAverage<float> weight_epsilons_avg;
 			OnlineAverage<float> weight_nonepsilons_avg;
+			OnlineAverage<float> weight_avg;
+			typename Arc::Weight weight_multiplied = Arc::Weight::One();
 			Min<float>           parallel_arcs_length_min;
 			Max<float>           parallel_arcs_length_max;
 			OnlineAverage<float> parallel_arcs_length_avg;
@@ -36,6 +38,8 @@ class FeaturesGenerator_Path
 			foreach(const PA* pa, path) {
 				assert(pa);
 				bool epsilon_found = false;
+				weight_multiplied = fst::Times(weight_multiplied, pa->GetWeight());
+				weight_avg.Add(pa->GetWeight().Value());
 				foreach(const Arc* a, *pa) {
 					epsilon_found |= a->ilabel == 0;
 				}
@@ -84,6 +88,8 @@ class FeaturesGenerator_Path
 				<< weight_epsilons_avg.GetValue() << " "
 				<< weight_nonepsilons_avg.GetValue() << " "
 				<< weight_nonepsilons_avg_weighted_by_arc_length << " "
+				<< weight_avg.Value() << " "
+				<< weight_multiplied.Value() << " "
 				;
 		}
 };
