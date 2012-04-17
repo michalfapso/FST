@@ -28,6 +28,7 @@ class FeaturesGenerator_Path
 			OnlineAverage<float> weight_epsilons_avg;
 			OnlineAverage<float> weight_nonepsilons_avg;
 			OnlineAverage<float> weight_avg;
+			OnlineAverage<float> weight_avg_log;
 			typename Arc::Weight weight_multiplied = Arc::Weight::One();
 			Min<float>           parallel_arcs_length_min;
 			Max<float>           parallel_arcs_length_max;
@@ -39,7 +40,8 @@ class FeaturesGenerator_Path
 				assert(pa);
 				bool epsilon_found = false;
 				weight_multiplied = fst::Times(weight_multiplied, pa->GetWeight());
-				weight_avg.Add(pa->GetWeight().Value());
+				weight_avg_log.Add(pa->GetWeight().Value());
+				weight_avg.Add(exp(-pa->GetWeight().Value()));
 				foreach(const Arc* a, *pa) {
 					epsilon_found |= a->ilabel == 0;
 				}
@@ -73,6 +75,7 @@ class FeaturesGenerator_Path
 				<< SecondsToMlfTime(path.GetStartTime()) << " "
 				<< SecondsToMlfTime(path.GetEndTime()) << " "
 				<< term << " "
+				<< std::setprecision(6)
 				<< (-path.GetWeight().Value()) << " "
 				// Arcs count
 				<< epsilons_count << " "
@@ -88,7 +91,8 @@ class FeaturesGenerator_Path
 				<< weight_epsilons_avg.GetValue() << " "
 				<< weight_nonepsilons_avg.GetValue() << " "
 				<< weight_nonepsilons_avg_weighted_by_arc_length << " "
-				<< weight_avg.GetValue() << " "
+				<< log(weight_avg.GetValue()) << " "
+				<< weight_avg_log.GetValue() << " "
 				<< weight_multiplied.Value() << " "
 				;
 		}
@@ -127,7 +131,6 @@ class FeaturesGenerator
 			PrintReferenceInfo(*p, mOss);
 			FeaturesGenerator_Path<Path>::PrintFeatures(*p, mTerm, mOss);
 			//mOss << "| " << *p;
-			mOss << " ";
 			// Various path info:
 			float pa_start_time = p->GetStartTime();
 			std::string pa_separator = "";
@@ -146,6 +149,8 @@ class FeaturesGenerator
 				}
 			}
 			mOss << endl;
+			//Path::SetPrintType(PRINT_ALL);
+			//mOss << "DEBUG: " << *p << endl << endl;
 		}
 	protected:
 		void PrintReferenceInfo(const Path& p, std::ostream& oss) {

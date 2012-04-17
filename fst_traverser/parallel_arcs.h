@@ -52,55 +52,45 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 		//--------------------------------------------------
 		// PRINTING
 		//--------------------------------------------------
-		std::ostream& PrintNodesOnly(std::ostream& oss) const {
-			if (this->empty()) {
-				return oss << "[EMPTY]";
-			} else {
-				return oss << GetNextState();
-			}
-		}
-
-		std::ostream& PrintAllInfo(std::ostream& oss) const {
-			if (this->empty()) {
-				return oss << "[EMPTY]";
-			} else {
-				oss << "[";
-				string separator = "";
-				foreach(const Arc* a, *this) {
-					oss << separator;
-					if (mspSyms) {oss << mspSyms->Find(a->ilabel);} else {oss << a->ilabel;}
-					oss << ":";
-					if (mspSyms) {oss << mspSyms->Find(a->olabel);} else {oss << a->olabel;}
-					oss << "/" << a->weight;
-					separator = " ";
-				}
-				oss << "] -> " << (*this->begin())->nextstate;
-				oss << " endTime=" << GetEndTime();
-				return oss;
-			}
-		}
-
-		std::ostream& PrintPhonemesOnly(std::ostream& oss) const {
-			if (this->empty()) {
-				return oss << "[EMPTY]";
-			} else {
-				oss << "[";
-				string separator = "";
-				foreach(const Arc* a, *this) {
-					oss << separator;
-					if (mspSyms) {oss << mspSyms->Find(a->ilabel);} else {oss << a->ilabel;}
-					separator = " ";
-				}
-				oss << "] ";
-				return oss;
-			}
-		}
-
 		friend std::ostream& operator<<(std::ostream& oss, const ParallelArcs<Arc>& pa) {
+			if (pa.empty()) {
+				return oss << "[EMPTY]";
+			}
 			switch (msPrintType) {
-				case PRINT_ALL: return pa.PrintAllInfo(oss);
-				case PRINT_NODES_ONLY: return pa.PrintNodesOnly(oss);
-				case PRINT_PHONEMES_ONLY: return pa.PrintPhonemesOnly(oss);
+				case PRINT_ALL: 
+				{
+					oss << "[";
+					string separator = "";
+					foreach(const Arc* a, pa) {
+						oss << separator;
+						if (mspSyms) {oss << mspSyms->Find(a->ilabel);} else {oss << a->ilabel;}
+						oss << ":";
+						if (mspSyms) {oss << mspSyms->Find(a->olabel);} else {oss << a->olabel;}
+						oss << "/" << a->weight;
+						separator = " ";
+					}
+					oss << "]/"<<pa.GetWeight()<<" -> " << (*pa.begin())->nextstate;
+					oss << " endTime=" << pa.GetEndTime();
+					oss.flush();
+					return oss;
+				}
+				case PRINT_NODES_ONLY: 
+				{
+					return oss << pa.GetNextState();
+				}
+				case PRINT_PHONEMES_ONLY: 
+				{
+					oss << "[";
+					string separator = "";
+					foreach(const Arc* a, pa) {
+						oss << separator;
+						if (mspSyms) {oss << mspSyms->Find(a->ilabel);} else {oss << a->ilabel;}
+						separator = " ";
+					}
+					oss << "] ";
+					oss.flush();
+					return oss;
+				}
 				default: throw std::runtime_error("ERROR: Unknown print type of Path!");
 			}
 		}

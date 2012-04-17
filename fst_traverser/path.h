@@ -97,52 +97,49 @@ class Path : public Path_Base<TArc>::type
 		//--------------------------------------------------
 		// PRINTING
 		//--------------------------------------------------
-		std::ostream& PrintNodesOnly(std::ostream& oss) const {
-			string separator = "";
-			foreach(const ParallelArcs<Arc>* pa, *this) {
-				assert(pa);
-				oss << separator << *pa;
-				separator = " ";
-			}
-			return oss;
-		}
-
-		std::ostream& PrintAllInfo(std::ostream& oss) const {
-			oss << std::setprecision(2) << "t[" << GetStartTime() << ".." << GetEndTime() << "] ";
-			oss << std::setprecision(4) << "w:" << GetWeight() << " ";
-			oss << "length:" << this->size() << " ";
-			oss << "mNonepsilonParallelArcsCount:" << mNonepsilonParallelArcsCount << " ";
-			oss << mStartStateId;
-			foreach(const ParallelArcs<Arc>* pa, *this) {
-				assert(pa);
-				oss << " -- " << *pa;
-				oss << "(isEpsilon:" << pa->IsEpsilon() << ")";
-			}
-			oss << endl;
-
-			PrintType pt = ParallelArcs<Arc>::GetPrintType();
-			ParallelArcs<Arc>::SetPrintType(PRINT_PHONEMES_ONLY);
-			oss << "phonemes: ";
-			PrintPhonemesOnly(oss);
-			ParallelArcs<Arc>::SetPrintType(pt);
-			return oss;
-		}
-
-		std::ostream& PrintPhonemesOnly(std::ostream& oss) const {
-			foreach(const ParallelArcs<Arc>* pa, *this) {
-				assert(pa);
-				if (!pa->IsEpsilon()) {
-					oss << *pa << " ";
-				}
-			}
-			return oss;
-		}
-
 		friend std::ostream& operator<<(std::ostream& oss, const Path<Arc>& p) {
 			switch (msPrintType) {
-				case PRINT_ALL: return p.PrintAllInfo(oss);
-				case PRINT_NODES_ONLY: return p.PrintNodesOnly(oss);
-				case PRINT_PHONEMES_ONLY: return p.PrintPhonemesOnly(oss);
+				case PRINT_ALL: 
+				{
+					oss << std::setprecision(2) << "t[" << p.GetStartTime() << ".." << p.GetEndTime() << "] ";
+					oss << std::setprecision(4) << "w:" << p.GetWeight() << " ";
+					oss << "length:" << p.size() << " ";
+					oss << "mNonepsilonParallelArcsCount:" << p.mNonepsilonParallelArcsCount << " ";
+					oss << p.mStartStateId;
+					foreach(const ParallelArcs<Arc>* pa, p) {
+						assert(pa);
+						oss << " -- " << *pa;
+						oss << "(isEpsilon:" << pa->IsEpsilon() << ")";
+					}
+					oss << endl;
+
+					PrintType pt = GetPrintType();
+					SetPrintType(PRINT_PHONEMES_ONLY);
+					oss << "phonemes: ";
+					oss << p;
+					SetPrintType(pt);
+					return oss;
+				}
+				case PRINT_NODES_ONLY:
+				{
+					string separator = "";
+					foreach(const ParallelArcs<Arc>* pa, p) {
+						assert(pa);
+						oss << separator << *pa;
+						separator = " ";
+					}
+					return oss;
+				}
+				case PRINT_PHONEMES_ONLY:
+				{
+					foreach(const ParallelArcs<Arc>* pa, p) {
+						assert(pa);
+						if (!pa->IsEpsilon()) {
+							oss << *pa << " ";
+						}
+					}
+					return oss;
+				}
 				default: throw std::runtime_error("ERROR: Unknown print type of Path!");
 			}
 		}
@@ -172,14 +169,12 @@ class PathAvgWeight : public Path<TArc>
 		PathAvgWeight(int startStateId, float startTime) : Path<Arc>(startStateId, startTime) {}
 
 		Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const {
-			return OnlineAverage<float>::WithValue(this->mWeight.Value(), this->size(), pa.GetWeight().Value());
-			//int c = this->size();
-			//return (this->mWeight.Value() * c + pa.GetWeight().Value()) / (c+1);
+			return -log(OnlineAverage<float>::WithValue(exp(-this->mWeight.Value()), this->size(), exp(-pa.GetWeight().Value())));
+			//return OnlineAverage<float>::WithValue(this->mWeight.Value(), this->size(), pa.GetWeight().Value());
 		}
 		Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const {
-			return OnlineAverage<float>::WithoutValue(this->mWeight.Value(), this->size(), pa.GetWeight().Value());
-			//int c = this->size();
-			//return (this->mWeight.Value() * c - pa.GetWeight().Value()) / (c-1);
+			return -log(OnlineAverage<float>::WithoutValue(exp(-this->mWeight.Value()), this->size(), exp(-pa.GetWeight().Value())));
+			//return OnlineAverage<float>::WithoutValue(this->mWeight.Value(), this->size(), pa.GetWeight().Value());
 		}
 };
 
