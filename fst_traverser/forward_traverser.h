@@ -38,7 +38,7 @@ class ForwardTraverser {
 					}
 				}
 				virtual bool operator()(const Arc& arc, bool* includeArc) const { 
-					includeArc = false;
+					*includeArc = false;
 					return arc.ilabel == SYMBOL_TERM_END;
 				}
 			protected:
@@ -114,7 +114,7 @@ class ForwardTraverser {
 
 
 	protected:
-		static const float SYMBOLS_TIME_STEP = 0.01;
+		static constexpr float SYMBOLS_TIME_STEP = 0.01;
 
 		const Fst<Arc>* mpFst;
 		const SymbolTable* mpSyms;
