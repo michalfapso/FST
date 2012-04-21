@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include "string2float.h"
+#include "parallel_arcs.h"
 
 template <class TArc>
 class Node_Base {

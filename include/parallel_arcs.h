@@ -105,16 +105,18 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			if (!mspSyms) { THROW("ERROR: ParallelArcs::RecomputeEndTime(): symbols are not set!"); }
 			float end_time = 0;
 			bool time_arcs_found = false;
+			typename Arc::Weight weight_time_arcs = Arc::Weight::Zero();
 			foreach(const Arc* a, *this) {
 				assert(a);
 				const std::string& olabel = mspSyms->Find(a->olabel);
 				if (olabel.substr(0,2) == "t=") {
 					time_arcs_found = true;
+					weight_time_arcs = fst::Plus(weight_time_arcs, a->weight);
 					float t = string2float(olabel.substr(2));
-					end_time += t * ( exp(-a->weight.Value()) / exp(-GetWeight().Value()) ); // Time is weighted by the normalized probability of the arc 
+					end_time += t * exp(-a->weight.Value()); // Time is weighted by the normalized probability of the arc 
 				}
 			}
-			return time_arcs_found ? end_time : -1;
+			return time_arcs_found ? end_time / exp(-weight_time_arcs.Value()) : -1;
 		}
 
 		typename Arc::Weight mWeight;
