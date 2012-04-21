@@ -9,7 +9,7 @@ class PathTerminator {
 		// return value: TRUE = terminate path, FALSE = continue
 		// includeArc: TRUE = include the given arc in the path
 		virtual bool operator()(const Arc& arc, bool* includeArc) const {
-			includeArc = false;
+			*includeArc = false;
 			return true; 
 		}
 		// For ParallelArcs:

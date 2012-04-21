@@ -45,6 +45,8 @@ class Path : public Path_Base<TArc>::type
 			mNonepsilonParallelArcsCount(0)
 		{}
 
+		virtual ~Path() {}
+
 		virtual Weight GetWeightWithArc(const ParallelArcs<Arc>& pa) const = 0;
 		virtual Weight GetWeightWithoutArc(const ParallelArcs<Arc>& pa) const = 0;
 

@@ -44,7 +44,7 @@ class PathGeneratorForward : public PathGenerator<Path>
 						const ParallelArcs<Arc>& pa = i->second;
 
 						bool include_arc = false;
-						bool path_end = mfPathTerminator(state_id, pa, &include_arc);
+						bool path_end = this->mfPathTerminator(state_id, pa, &include_arc);
 						if (path_end) {
 							const Path* path_to_add = vnbp[state_id].GetBestPath();
 							if (path_to_add && path_to_add->IsValid()) {

@@ -1,7 +1,8 @@
 #ifndef _NODE_H
 #define _NODE_H
 
-#include <boost/unordered_map.hpp>
+//#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -70,7 +71,8 @@ class Node_ParallelArcs : public NodeBase {
 		typedef Node_ParallelArcs<NodeBase> Node;
 		typedef typename NodeBase::Arc Arc;
 	public:
-		typedef boost::unordered_map<int, ParallelArcs<Arc> > Nextnode2ParallelArcs;
+//		typedef boost::unordered_map<int, ParallelArcs<Arc> > Nextnode2ParallelArcs;
+		typedef std::unordered_map<int, ParallelArcs<Arc> > Nextnode2ParallelArcs;
 
 		Node_ParallelArcs() : NodeBase() {}
 
