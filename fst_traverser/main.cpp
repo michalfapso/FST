@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 			cerr << "done" << endl;
 		}
 
-		typedef PathAvgWeight<Arc> Path; // PathAvgWeight | PathMultWeight
+		typedef PathMultWeight<Arc> Path; // PathAvgWeight | PathMultWeight
 
 		OverlappingPathGroupList<Path> paths;
 
