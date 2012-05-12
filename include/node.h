@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include "string2float.h"
+#include "parallel_arcs.h"
 
 template <class TArc>
 class Node_Base {
@@ -173,7 +174,6 @@ class Node_BestPath : public NodeBase {
 		inline const void SetBestPathWeight(Weight w) {AllocateBestPath(); mpBestPath->SetWeight(w);}
 
 		bool IsValidBestPathNode() const {
-			//return GetBestPath().GetStartStateId() != INVALID_PATH_START_STATE_ID;
 			return GetBestPath();
 		}
 		void Reset() { delete mpBestPath; mpBestPath = NULL; }
@@ -182,6 +182,8 @@ class Node_BestPath : public NodeBase {
 		{
 			if (nFrom.GetBestPath()) {
 				const Weight w = nFrom.GetBestPath()->GetWeightWithArc(*pa);
+				//float time_length_new_path = pa->GetEndTime() - nFrom.GetBestPath()->GetStartTime();
+				//float time_length_orig_path = GetBestPath() ? GetBestPath()->GetEndTime() - GetBestPath()->GetStartTime() : 0;
 				if (!GetBestPath() || w.Value() < GetBestPath()->GetWeight().Value()) {
 					AllocateBestPath();
 					*mpBestPath = *nFrom.GetBestPath();

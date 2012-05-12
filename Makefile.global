@@ -4,7 +4,7 @@ LDFLAGS = -lfst -ldl -lstdc++ -lm
 #LDFLAGS = -lprofiler -ltcmalloc -lfst -ldl 
 
 TOP := $(dir $(lastword $(MAKEFILE_LIST)))
-include $(TOP)/Makefile.paths
+-include $(TOP)/Makefile.paths
 
 SOURCES:=$(shell ls *.cpp)
 #These are the dependency files, which make will clean up after it creates them
@@ -14,10 +14,10 @@ OBJFILES:=$(patsubst %.cpp,.objs/%.o,$(SOURCES))
 .PHONY: clean all dist static-check
 
 all : CXXFLAGS += -O0
-all : $(EXEC)
+all : $(ALL_EXTRA_DEPS) $(EXEC)
 
 dist : CXXFLAGS += -O3
-dist : $(EXEC)
+dist : $(ALL_EXTRA_DEPS) $(EXEC)
 
 #static-check : CXX = ~/bin/scan-build/ccc-analyzer
 static-check :
