@@ -20,16 +20,16 @@ class PathPool : public std::unordered_map<std::string, OverlappingPathGroupList
 		{
 			Path* p = new Path(rPath); // Create a copy
 
-			if ((float)p.mPhonemesCount / p.mPathsCount < mMinPhonemesCountThreshold) {
+			if ((float)p->mPhonemesCount / p->mPathsCount < mMinPhonemesCountThreshold) {
 				return;
 			}
 
-			assert(p.mWord != NO_WORD);
-			assert(p.mStartTime != NO_TIME); 
-			assert(p.mEndTime != NO_TIME);
+			assert(p->mWord != NO_WORD);
+			assert(p->mStartTime != NO_TIME); 
+			assert(p->mEndTime != NO_TIME);
 
-			OverlappingPathGroupList<Path>* pPathList = GetOverlappingPathGroupList(p.mWord);
-			pPathList->AddPath(p);
+			OverlappingPathGroupList<Path>* pPathList = GetOverlappingPathGroupList(p->mWord);
+			pPathList->AddPath(*p);
 //			cerr << "PathPool::AddPath() len="<<pPath->mPhonemesCount<<" lennosil="<<pPath->mPhonemesCount<<" path="<<p<<endl;
 		}
 

@@ -1,6 +1,6 @@
-CXX = g++
+CXX = clang++
 CXXFLAGS = -g -Wall -std=c++0x -I../include
-LDFLAGS = -lfst -ldl
+LDFLAGS = -lfst -ldl -lstdc++ -lm
 #LDFLAGS = -lprofiler -ltcmalloc -lfst -ldl 
 
 TOP := $(dir $(lastword $(MAKEFILE_LIST)))
@@ -11,13 +11,18 @@ SOURCES:=$(shell ls *.cpp)
 DEPFILES:=$(patsubst %.cpp,.deps/%.P,$(SOURCES))
 OBJFILES:=$(patsubst %.cpp,.objs/%.o,$(SOURCES))
 
-.PHONY: clean all dist
+.PHONY: clean all dist static-check
 
 all : CXXFLAGS += -O0
 all : $(EXEC)
 
 dist : CXXFLAGS += -O3
 dist : $(EXEC)
+
+#static-check : CXX = ~/bin/scan-build/ccc-analyzer
+static-check :
+	make clean
+	CXX=$(HOME)/bin/scan-build/ccc-analyzer $(HOME)/bin/scan-build/scan-build -v -v -v --use-c++=clang++ -analyze-headers make
 
 $(EXEC) : $(OBJFILES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS)
