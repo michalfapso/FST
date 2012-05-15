@@ -135,7 +135,6 @@ int main(int argc, char **argv)
 		//paths.Print("_DETECTION_");
 		//DBG("Generated paths end");
 
-
 		PrintType pt = Path::GetPrintType();
 		Path::SetPrintType(PRINT_PHONEMES_ONLY);
 		{

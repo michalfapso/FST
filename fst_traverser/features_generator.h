@@ -22,7 +22,7 @@ class FeaturesGenerator_Path
 		typedef typename Path::Arc Arc;
 		typedef ParallelArcs<Arc> PA;
 
-		static void PrintFeatures(const Path& path, const std::string& term, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef, std::ostream& oss)
+		static void PrintFeatures(const Path& path, const std::string& term, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef, const OverlappingPathGroup<Path>* pPathGroup, std::ostream& oss)
 		{
 			unsigned int epsilons_count = 0;
 			OnlineAverage<float> phonemes_per_parallel_arc_avg;
@@ -38,6 +38,8 @@ class FeaturesGenerator_Path
 			float pa_start_time = path.GetStartTime();
 			float weight_nonepsilons_avg_weighted_by_arc_length = 0;
 			float time_length = -1;
+
+			typename Arc::Weight opg_sum_weight = Arc::Weight::Zero();
 
 			if (msPrintFieldValues) {
 				foreach(const PA* pa, path) {
@@ -63,15 +65,27 @@ class FeaturesGenerator_Path
 						parallel_arcs_length_min.Add(pa_length);
 						parallel_arcs_length_max.Add(pa_length);
 						parallel_arcs_length_avg.Add(pa_length);
-						weight_nonepsilons_avg_weighted_by_arc_length += exp(-pa->GetWeight().Value()) * pa_length;
+						if (pa_length > 0) {
+							weight_nonepsilons_avg_weighted_by_arc_length += exp(-pa->GetWeight().Value()) * pa_length;
+						}
 						pa_start_time = pa->GetEndTime();
 						//DBG("pa: "<<*pa<<" length="<<pa_length<<" weight="<<pa->GetWeight().Value());
 					}
 				}
 				assert(path.GetEndTime() >= 0);
 				time_length = path.GetEndTime() - path.GetStartTime();
-				weight_nonepsilons_avg_weighted_by_arc_length /= time_length;
-				weight_nonepsilons_avg_weighted_by_arc_length = -log(weight_nonepsilons_avg_weighted_by_arc_length);
+				if (time_length <= 0) {
+					weight_nonepsilons_avg_weighted_by_arc_length = 0;
+				} else {
+					weight_nonepsilons_avg_weighted_by_arc_length /= time_length;
+					weight_nonepsilons_avg_weighted_by_arc_length = -log(weight_nonepsilons_avg_weighted_by_arc_length);
+				}
+
+				if (pPathGroup) {
+					foreach (Path* p, *pPathGroup) {
+						opg_sum_weight = Plus(opg_sum_weight, p->GetWeight());
+					}
+				}
 			}
 
 			// Standard MLF fields
@@ -98,6 +112,8 @@ class FeaturesGenerator_Path
 			PrintField(oss, "avgW",          log(weight_avg.GetValue()));
 			PrintField(oss, "avgWLog",       weight_avg_log.GetValue());
 			PrintField(oss, "multW",         weight_multiplied.Value());
+			PrintField(oss, "opgSize",       pPathGroup ? pPathGroup->size() : 0);
+			PrintField(oss, "opgSumW",       opg_sum_weight.Value());
 			PrintField(oss, "pathInfo",      GetPathInfoString(path));
 		}
 		static void SetPrintFieldNames(bool p) {msPrintFieldNames = p;}
@@ -165,13 +181,13 @@ class FeaturesGenerator
 			if (!mOss.good()) {
 				THROW("ERROR: FeaturesGenerator: Can not open file "<<outputFilename<<" for writing!");
 			}
-
-			// Print only table header
+			
+			// Print table header
 			FeaturesGenerator_Path<Path>::SetPrintFieldNames(true);
 			FeaturesGenerator_Path<Path>::SetPrintFieldValues(false);
-			FeaturesGenerator_Path<Path>::PrintFeatures(Path(-1,-1), mTerm, mRecsRef, mOss); mOss << endl;
-
-			// Setup printing of features
+			{
+				FeaturesGenerator_Path<Path>::PrintFeatures(Path(-1,-1), mTerm, mRecsRef, NULL, mOss); mOss << endl;
+			}
 			FeaturesGenerator_Path<Path>::SetPrintFieldNames(false);
 			FeaturesGenerator_Path<Path>::SetPrintFieldValues(true);
 		}
@@ -185,14 +201,14 @@ class FeaturesGenerator
 		}
 		void Generate(const OverlappingPathGroup<Path>* pg) {
 			assert(pg);
-			Generate(pg->GetBestPath());
+			Generate(pg->GetBestPath(), pg);
 //			foreach(const Path* p, *pg) {
-//				Generate(p);
+//				Generate(p, pg);
 //			}
 		}
-		void Generate(const Path* p) {
+		void Generate(const Path* p, const OverlappingPathGroup<Path>* pg) {
 			assert(p);
-			FeaturesGenerator_Path<Path>::PrintFeatures(*p, mTerm, mRecsRef, mOss);
+			FeaturesGenerator_Path<Path>::PrintFeatures(*p, mTerm, mRecsRef, pg, mOss);
 			//mOss << "| " << *p;
 			// Various path info:
 			mOss << endl;

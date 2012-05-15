@@ -33,6 +33,9 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			mIsEpsilon |= arc->ilabel == 0;
 			this->mContainer.push_back(arc);
 			mWeight = Plus(mWeight, arc->weight);
+//			if (mWeight.Value() > arc->weight.Value()) {
+//				mWeight = arc->weight;
+//			}
 			mEndTime = RecomputeEndTime();
 		}
 
