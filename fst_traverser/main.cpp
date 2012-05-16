@@ -6,7 +6,7 @@
 
 #include "path_pool.h"
 #include "forward_traverser.h"
-#include "features_generator.h"
+#include "features_generator_detection.h"
 
 #include "mlf.h"
 #include "hypotheses.h"
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 		PrintType pt = Path::GetPrintType();
 		Path::SetPrintType(PRINT_PHONEMES_ONLY);
 		{
-			FeaturesGenerator_Path<Path> features(pfeatures_out, pterm, recs_ref);
+			FeaturesGenerator_Detection<Path> features(pfeatures_out, pterm, recs_ref);
 			features.Generate(paths);
 		}
 		Path::SetPrintType(pt);

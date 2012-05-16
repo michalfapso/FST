@@ -75,8 +75,8 @@ class Path : public Path_Base<TArc>::type
 		}
 
 		bool IsValid() const {
-			return mNonepsilonParallelArcsCount >= 2 
-				&& GetStartTime() > 0
+			return mNonepsilonParallelArcsCount >= 2 // at least 2 non epsilon arcs on the path
+				&& GetStartTime() >= 0
 				&& GetEndTime() > 0
 				&& GetStartTime() != GetEndTime();
 		}
