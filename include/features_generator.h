@@ -10,6 +10,7 @@
 #include "online_average.h"
 #include "min_max.h"
 #include "seconds_to_mlf_time.h"
+#include "ostream_file_stdout.h"
 
 #include "mlf.h"
 #include "hypotheses.h"
@@ -17,23 +18,16 @@
 class FeaturesGenerator
 {
 	public:
-		FeaturesGenerator(const std::string& outputFilename)
-		{
-			mOss.open(outputFilename);
-			if (!mOss.good()) {
-				THROW("ERROR: FeaturesGenerator: Can not open file "<<outputFilename<<" for writing!");
-			}
-		}
-		virtual ~FeaturesGenerator() {
-			mOss.close();
-		}
-		
+		FeaturesGenerator(const std::string& outputFilename) :
+			mOss(outputFilename)
+		{}
+
 		static void SetPrintFieldNames(bool p) {msPrintFieldNames = p;}
 		static void SetPrintFieldValues(bool p) {msPrintFieldValues = p;}
 	protected:
 		static bool msPrintFieldNames;
 		static bool msPrintFieldValues;
-		std::ofstream mOss;
+		OstreamFileStdout mOss;
 
 		template <typename T>
 		static void PrintField(std::ostream& oss, const std::string& name, const T& val) {
