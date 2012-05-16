@@ -14,14 +14,98 @@
 #include "mlf.h"
 #include "hypotheses.h"
 
+class FeaturesGenerator
+{
+	public:
+		FeaturesGenerator(const std::string& outputFilename)
+		{
+			mOss.open(outputFilename);
+			if (!mOss.good()) {
+				THROW("ERROR: FeaturesGenerator: Can not open file "<<outputFilename<<" for writing!");
+			}
+		}
+		virtual ~FeaturesGenerator() {
+			mOss.close();
+		}
+		
+		static void SetPrintFieldNames(bool p) {msPrintFieldNames = p;}
+		static void SetPrintFieldValues(bool p) {msPrintFieldValues = p;}
+	protected:
+		static bool msPrintFieldNames;
+		static bool msPrintFieldValues;
+		std::ofstream mOss;
+
+		template <typename T>
+		static void PrintField(std::ostream& oss, const std::string& name, const T& val) {
+			if (msPrintFieldNames) { oss << name; }
+			if (msPrintFieldNames && msPrintFieldValues) { oss << "="; }
+			if (msPrintFieldValues) { oss << val; }
+			oss << " ";
+		}
+
+		static bool IsHit(float startTimeSeconds, float endTimeSeconds, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef) {
+			//float best_overlapping_ratio = 0;
+			float p_start_frame = seconds_to_frames(startTimeSeconds);
+			float p_end_frame = seconds_to_frames(endTimeSeconds);
+			foreach(const ReferenceMlfRecord* ref_rec, recsRef) {
+				// if they overlap
+				if (p_start_frame < ref_rec->GetEndTime() && p_end_frame > ref_rec->GetStartTime()) {
+					return true;
+				}
+			}
+			return false;
+		}
+};
+bool FeaturesGenerator::msPrintFieldNames = false;
+bool FeaturesGenerator::msPrintFieldValues = true;
+
+
 template <class TPath>
-class FeaturesGenerator_Path
+class FeaturesGenerator_Path : public FeaturesGenerator
 {
 	public:
 		typedef TPath Path;
 		typedef typename Path::Arc Arc;
 		typedef ParallelArcs<Arc> PA;
 
+		FeaturesGenerator_Path(const std::string& outputFilename, const std::string& term, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef) : 
+			FeaturesGenerator(outputFilename),
+			mTerm(term), 
+			mRecsRef(recsRef)
+		{
+			// Print table header
+			SetPrintFieldNames(true);
+			SetPrintFieldValues(false);
+			{
+				PrintFeatures(Path(-1,-1), mTerm, mRecsRef, NULL, mOss); mOss << endl;
+			}
+			SetPrintFieldNames(false);
+			SetPrintFieldValues(true);
+		}
+
+		void Generate(const OverlappingPathGroupList<Path>& pgl) {
+			foreach(const OverlappingPathGroup<Path>* pg, pgl) {
+				Generate(pg);
+			}
+		}
+		void Generate(const OverlappingPathGroup<Path>* pg) {
+			assert(pg);
+			Generate(pg->GetBestPath(), pg);
+//			foreach(const Path* p, *pg) {
+//				Generate(p, pg);
+//			}
+		}
+		void Generate(const Path* p, const OverlappingPathGroup<Path>* pg) {
+			assert(p);
+			PrintFeatures(*p, mTerm, mRecsRef, pg, mOss);
+			//mOss << "| " << *p;
+			// Various path info:
+			mOss << endl;
+			//Path::SetPrintType(PRINT_ALL);
+			//mOss << "DEBUG: " << *p << endl << endl;
+		}
+
+	protected:
 		static void PrintFeatures(const Path& path, const std::string& term, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef, const OverlappingPathGroup<Path>* pPathGroup, std::ostream& oss)
 		{
 			unsigned int epsilons_count = 0;
@@ -89,7 +173,7 @@ class FeaturesGenerator_Path
 			}
 
 			// Standard MLF fields
-			PrintField(oss, "isHit",         IsHit(path, recsRef));
+			PrintField(oss, "isHit",         IsHit(path.GetStartTime(), path.GetEndTime(), recsRef));
 			PrintField(oss, "startT",        SecondsToMlfTime(path.GetStartTime()));
 			PrintField(oss, "endT",          SecondsToMlfTime(path.GetEndTime()));
 			PrintField(oss, "term",          term);
@@ -116,20 +200,7 @@ class FeaturesGenerator_Path
 			PrintField(oss, "opgSumW",       opg_sum_weight.Value());
 			PrintField(oss, "pathInfo",      GetPathInfoString(path));
 		}
-		static void SetPrintFieldNames(bool p) {msPrintFieldNames = p;}
-		static void SetPrintFieldValues(bool p) {msPrintFieldValues = p;}
 	protected:
-		static bool msPrintFieldNames;
-		static bool msPrintFieldValues;
-
-		template <typename T>
-		static void PrintField(std::ostream& oss, const std::string& name, const T& val) {
-			if (msPrintFieldNames) { oss << name; }
-			if (msPrintFieldNames && msPrintFieldValues) { oss << "="; }
-			if (msPrintFieldValues) { oss << val; }
-			oss << " ";
-		}
-
 		static const std::string GetPathInfoString(const Path& p) 
 		{
 			std::ostringstream oss;
@@ -152,72 +223,9 @@ class FeaturesGenerator_Path
 			return oss.str();
 		}
 
-		static bool IsHit(const Path& p, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef) {
-			//float best_overlapping_ratio = 0;
-			float p_start_frame = seconds_to_frames(p.GetStartTime());
-			float p_end_frame = seconds_to_frames(p.GetEndTime());
-			foreach(const ReferenceMlfRecord* ref_rec, recsRef) {
-				// if they overlap
-				if (p_start_frame < ref_rec->GetEndTime() && p_end_frame > ref_rec->GetStartTime()) {
-					return true;
-				}
-			}
-			return false;
-		}
-};
-template <class TPath> bool FeaturesGenerator_Path<TPath>::msPrintFieldNames = false;
-template <class TPath> bool FeaturesGenerator_Path<TPath>::msPrintFieldValues = true;
-
-
-template <class TPath>
-class FeaturesGenerator
-{
-	public:
-		typedef TPath Path;
-		typedef typename Path::Arc Arc;
-		FeaturesGenerator(const std::string& term, const std::string& outputFilename, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef) : mTerm(term), mRecsRef(recsRef)
-		{
-			mOss.open(outputFilename);
-			if (!mOss.good()) {
-				THROW("ERROR: FeaturesGenerator: Can not open file "<<outputFilename<<" for writing!");
-			}
-			
-			// Print table header
-			FeaturesGenerator_Path<Path>::SetPrintFieldNames(true);
-			FeaturesGenerator_Path<Path>::SetPrintFieldValues(false);
-			{
-				FeaturesGenerator_Path<Path>::PrintFeatures(Path(-1,-1), mTerm, mRecsRef, NULL, mOss); mOss << endl;
-			}
-			FeaturesGenerator_Path<Path>::SetPrintFieldNames(false);
-			FeaturesGenerator_Path<Path>::SetPrintFieldValues(true);
-		}
-		~FeaturesGenerator() {
-			mOss.close();
-		}
-		void Generate(const OverlappingPathGroupList<Path>& pgl) {
-			foreach(const OverlappingPathGroup<Path>* pg, pgl) {
-				Generate(pg);
-			}
-		}
-		void Generate(const OverlappingPathGroup<Path>* pg) {
-			assert(pg);
-			Generate(pg->GetBestPath(), pg);
-//			foreach(const Path* p, *pg) {
-//				Generate(p, pg);
-//			}
-		}
-		void Generate(const Path* p, const OverlappingPathGroup<Path>* pg) {
-			assert(p);
-			FeaturesGenerator_Path<Path>::PrintFeatures(*p, mTerm, mRecsRef, pg, mOss);
-			//mOss << "| " << *p;
-			// Various path info:
-			mOss << endl;
-			//Path::SetPrintType(PRINT_ALL);
-			//mOss << "DEBUG: " << *p << endl << endl;
-		}
 	protected:
 		const std::string mTerm;
 		const mlf::MlfRecords<ReferenceMlfRecord>& mRecsRef;
-		std::ofstream mOss;
 };
+
 #endif

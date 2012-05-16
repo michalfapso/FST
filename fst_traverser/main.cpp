@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 		PrintType pt = Path::GetPrintType();
 		Path::SetPrintType(PRINT_PHONEMES_ONLY);
 		{
-			FeaturesGenerator<Path> features(pterm, pfeatures_out, recs_ref);
+			FeaturesGenerator_Path<Path> features(pfeatures_out, pterm, recs_ref);
 			features.Generate(paths);
 		}
 		Path::SetPrintType(pt);
