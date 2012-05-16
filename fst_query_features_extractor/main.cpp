@@ -1,15 +1,16 @@
 #include <fst/fst.h>
+#include <fst/vector-fst.h>
 //#include <fst/main.h>
 #include <iostream>
 #include <climits>
 #include <float.h>
 
 #include "path_pool.h"
-#include "forward_traverser.h"
-#include "features_generator_detection.h"
-
-#include "mlf.h"
-#include "hypotheses.h"
+#include "features_generator_query.h"
+#include "fst_properties.h"
+#include "nodes.h"
+#include "path_terminator.h"
+#include "path_generator_forward.h"
 
 using namespace std;
 using namespace fst;
@@ -37,11 +38,7 @@ int main(int argc, char **argv)
 {
 	char * pfst_filename = 0;
 	char * psyms_filename = 0;
-	char * pterm = 0;
 	char * pfeatures_out = 0;
-	char * preference_mlf = 0;
-	char * putterance_filename = 0;
-//	OverlappedScoreType::Enum overlapped_score_method = OverlappedScoreType::logadd;
 
 	// PARSE COMMAND LINE ARGUMENTS
 	if (argc <= 1) {
@@ -55,21 +52,9 @@ int main(int argc, char **argv)
 			i++;
 			psyms_filename = argv[i];
 		} 
-		else if (strcmp(argv[i], "--term") == 0) {
-			i++;
-			pterm = argv[i];
-		}
 		else if (strcmp(argv[i], "--features-out") == 0) {
 			i++;
 			pfeatures_out = argv[i];
-		}
-		else if (strcmp(argv[i], "--reference-mlf") == 0) {
-			i++;
-			preference_mlf = argv[i];
-		}
-		else if (strcmp(argv[i], "--utterance-filename") == 0) {
-			i++;
-			putterance_filename = argv[i];
 		}
 		else if (strcmp(argv[i], "--help") == 0) {
 			help(argv[0]);
@@ -86,26 +71,11 @@ int main(int argc, char **argv)
 		i++;
 	}
 
-	if (!psyms_filename || !pterm || !pfst_filename || !pfeatures_out || !preference_mlf || !putterance_filename) {
+	if (!psyms_filename || !pfst_filename || !pfeatures_out) {
 		cerr << "ERROR: missing arguments." << endl;
 		help(argv[0]);
 		return 1;
 	}
-
-	mlf::Mlf<ReferenceMlfRecord>             mlf_ref(preference_mlf);
-	mlf::MlfRecords<ReferenceMlfRecord>*     recs_ref_all_terms = mlf_ref.GetFile(putterance_filename);
-	mlf::MlfRecords<ReferenceMlfRecord>      recs_ref;
-	if (!recs_ref_all_terms) {
-		THROW("ERROR: File '"<<putterance_filename<<"' was not found in reference MLF '"<<preference_mlf<<"'");
-	}
-	// Keep only the given term in reference records
-	foreach(ReferenceMlfRecord* rec, *recs_ref_all_terms) {
-		assert(rec);
-		if (rec->GetWord() == (string)pterm) {
-			recs_ref.AddRecord(rec);
-		}
-	}
-
 
 	SymbolTable* syms = NULL;
 	syms = SymbolTable::ReadText(psyms_filename);
@@ -123,22 +93,25 @@ int main(int argc, char **argv)
 		}
 
 		typedef PathMultWeight<Arc> Path; // PathAvgWeight | PathMultWeight
+		Path::SetSymbols(syms);
 
+		Nodes<Arc> nodes(*fst, syms);
+
+		PathTerminator<Arc> path_terminator;
+		PathGeneratorForward<Path> path_gen(*fst, nodes, path_terminator, PathGenerator<Path>::FINAL_NODE_ADD_PATH);
 		OverlappingPathGroupList<Path> paths;
+		path_gen.GeneratePaths(0, 0, &paths);
 
-		ForwardTraverser<Path> trav(fst, syms);
-		trav.Traverse(&paths);
-
-		//DBG("Generated paths:");
-		//OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
-		//OverlappingPathGroup<Path>::PrintBestPathInGroup(true);
-		//paths.Print("_DETECTION_");
-		//DBG("Generated paths end");
+//		DBG("Generated paths:");
+//		OverlappingPathGroup<Path>::PrintAllPathsInGroup(false);
+//		OverlappingPathGroup<Path>::PrintBestPathInGroup(true);
+//		paths.Print("_DETECTION_");
+//		DBG("Generated paths end");
 
 		PrintType pt = Path::GetPrintType();
 		Path::SetPrintType(PRINT_PHONEMES_ONLY);
 		{
-			FeaturesGenerator_Detection<Path> features(pfeatures_out, pterm, recs_ref);
+			FeaturesGenerator_Query<Path> features(pfeatures_out);
 			features.Generate(paths);
 		}
 		Path::SetPrintType(pt);

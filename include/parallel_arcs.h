@@ -26,13 +26,13 @@ class ParallelArcs : public ParallelArcs_Base<Arc>::type {
 			assert(arc);
 			if (!this->empty()) {
 				assert((*this->begin())->nextstate == arc->nextstate);
-				if (!mIsEpsilon && arc->ilabel == 0) {
-					THROW("ERROR: ParallelArcs::Add(): epsilon arcs should not have parallel arcs! (pa:"<<*this<<" new_arc:"<<*arc<<")");
-				}
 			}
-			mIsEpsilon |= arc->ilabel == 0;
+			mIsEpsilon = arc->ilabel == 0 && (this->mContainer.empty() || mIsEpsilon);
 			this->mContainer.push_back(arc);
 			mWeight = Plus(mWeight, arc->weight);
+//			if (mWeight.Value() > arc->weight.Value()) {
+//				mWeight = arc->weight;
+//			}
 			mEndTime = RecomputeEndTime();
 		}
 
