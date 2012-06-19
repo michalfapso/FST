@@ -19,7 +19,8 @@ class FeaturesGenerator
 {
 	public:
 		FeaturesGenerator(const std::string& outputFilename) :
-			mOss(outputFilename)
+			mOss(outputFilename),
+			mFieldNamePrefix("")
 		{}
 
 		static void SetPrintFieldNames(bool p) {msPrintFieldNames = p;}
@@ -28,13 +29,19 @@ class FeaturesGenerator
 		static bool msPrintFieldNames;
 		static bool msPrintFieldValues;
 		OstreamFileStdout mOss;
+		bool mFieldSeparator;
+		std::string mFieldNamePrefix;
+
+		void PrintField_begin(std::ostream& oss) {
+			mFieldSeparator = false;
+		}
 
 		template <typename T>
-		static void PrintField(std::ostream& oss, const std::string& name, const T& val) {
-			if (msPrintFieldNames) { oss << name; }
+		void PrintField(std::ostream& oss, const std::string& name, const T& val) {
+			if (mFieldSeparator) { oss << " "; } else {mFieldSeparator = true;}
+			if (msPrintFieldNames) { oss << mFieldNamePrefix << name; }
 			if (msPrintFieldNames && msPrintFieldValues) { oss << "="; }
 			if (msPrintFieldValues) { oss << val; }
-			oss << " ";
 		}
 
 		static bool IsHit(float startTimeSeconds, float endTimeSeconds, const mlf::MlfRecords<ReferenceMlfRecord>& recsRef) {

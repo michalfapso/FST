@@ -6,7 +6,7 @@
 
 #include "path_pool.h"
 #include "forward_traverser.h"
-#include "features_generator_detection.h"
+#include "features_generator_path_detection.h"
 
 #include "mlf.h"
 #include "hypotheses.h"
@@ -95,17 +95,19 @@ int main(int argc, char **argv)
 	mlf::Mlf<ReferenceMlfRecord>             mlf_ref(preference_mlf);
 	mlf::MlfRecords<ReferenceMlfRecord>*     recs_ref_all_terms = mlf_ref.GetFile(putterance_filename);
 	mlf::MlfRecords<ReferenceMlfRecord>      recs_ref;
-	if (!recs_ref_all_terms) {
-		THROW("ERROR: File '"<<putterance_filename<<"' was not found in reference MLF '"<<preference_mlf<<"'");
-	}
+//	THIS CHECKING FAILS WHEN A REFERENCE UTTERANCE HAS NO RECORD
+//	if (!recs_ref_all_terms) {
+//		THROW("ERROR: File '"<<putterance_filename<<"' was not found in reference MLF '"<<preference_mlf<<"'");
+//	}
 	// Keep only the given term in reference records
-	foreach(ReferenceMlfRecord* rec, *recs_ref_all_terms) {
-		assert(rec);
-		if (rec->GetWord() == (string)pterm) {
-			recs_ref.AddRecord(rec);
+	if (recs_ref_all_terms) {
+		foreach(ReferenceMlfRecord* rec, *recs_ref_all_terms) {
+			assert(rec);
+			if (rec->GetWord() == (string)pterm) {
+				recs_ref.AddRecord(rec);
+			}
 		}
 	}
-
 
 	SymbolTable* syms = NULL;
 	syms = SymbolTable::ReadText(psyms_filename);
@@ -138,7 +140,8 @@ int main(int argc, char **argv)
 		PrintType pt = Path::GetPrintType();
 		Path::SetPrintType(PRINT_PHONEMES_ONLY);
 		{
-			FeaturesGenerator_Detection<Path> features(pfeatures_out, pterm, recs_ref);
+			FeaturesGenerator_PathDetection<Path> features(pfeatures_out, pterm, recs_ref);
+			features.PrintHeader();
 			features.Generate(paths);
 		}
 		Path::SetPrintType(pt);

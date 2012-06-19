@@ -6,7 +6,7 @@
 #include <float.h>
 
 #include "path_pool.h"
-#include "features_generator_query.h"
+#include "features_generator_path_query.h"
 #include "fst_properties.h"
 #include "nodes.h"
 #include "path_terminator.h"
@@ -111,7 +111,8 @@ int main(int argc, char **argv)
 		PrintType pt = Path::GetPrintType();
 		Path::SetPrintType(PRINT_PHONEMES_ONLY);
 		{
-			FeaturesGenerator_Query<Path> features(pfeatures_out);
+			FeaturesGenerator_PathQuery<Path> features(pfeatures_out);
+			features.PrintHeader();
 			features.Generate(paths);
 		}
 		Path::SetPrintType(pt);
